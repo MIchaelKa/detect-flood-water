@@ -80,7 +80,7 @@ def train_model(
     data_loader_iter = iter(data_loader)
 
     valid_iters_copy = valid_iters.copy()
-    valid_iter_num = get_next_valid_iter(valid_iters)
+    valid_iter_num = get_next_valid_iter(valid_iters_copy)
 
     for iter_num in range(0, max_iter):
 
@@ -125,7 +125,7 @@ def train_model(
 
         
         if iter_num == valid_iter_num:
-            valid_iter_num = get_next_valid_iter(valid_iters)
+            valid_iter_num = get_next_valid_iter(valid_iters_copy)
 
             v_loss_meter, v_score_meter = validate(model, device, valid_loader, criterion, verbose=False, print_every=5)
 
@@ -166,7 +166,7 @@ def train_model(
         'valid_loss_history' : valid_loss_history,
         'valid_score_history' : valid_score_history,
 
-        'valid_iters' : valid_iters_copy
+        'valid_iters' : valid_iters
     }
 
     return train_info

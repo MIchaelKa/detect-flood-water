@@ -1,11 +1,25 @@
 import numpy as np
 
-class AverageMeter():
+class BaseMeter():
+
     def __init__(self):
         self.reset()
 
     def reset(self):
         self.history = []
+
+    def moving_average(self, alpha):
+        avg_history = [self.history[0]]
+        for i in range(1, len(self.history)):
+            moving_avg = alpha * avg_history[-1] + (1 - alpha) * self.history[i]
+            avg_history.append(moving_avg)
+        return avg_history
+
+
+class AverageMeter(BaseMeter):
+
+    def reset(self):
+        super().reset()
         self.total_sum = 0
         self.total_count = 0
 
@@ -16,13 +30,6 @@ class AverageMeter():
 
     def compute_average(self):
         return np.mean(self.history)
-
-    def moving_average(self, alpha):
-        avg_history = [self.history[0]]
-        for i in range(1, len(self.history)):
-            moving_avg = alpha * avg_history[-1] + (1 - alpha) * self.history[i]
-            avg_history.append(moving_avg)
-        return avg_history
 
 
 import torch
@@ -51,13 +58,10 @@ def intersection_and_union(pred, true):
     union = np.logical_or(true, pred)
     return intersection.sum(), union.sum()
 
-class IoUMeter():
-    def __init__(self):
-        self.reset()
+class IoUMeter(BaseMeter):
 
     def reset(self):
-        self.history = []
-
+        super().reset()
         self.intersection = 0
         self.union = 0
 
@@ -78,6 +82,4 @@ class IoUMeter():
 
     def compute_score(self):
         return self.intersection / self.union
-
-        
 
