@@ -73,9 +73,8 @@ class IoUMeter():
         self.intersection += intersection
         self.union += union
 
-        # TODO: add to history?
         batch_iou = intersection / union
-        # print(batch_iou)
+        self.history.append(batch_iou)
 
     def compute_score(self):
         return self.intersection / self.union

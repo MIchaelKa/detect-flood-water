@@ -66,7 +66,7 @@ def train_model(
     print('[train] started...')
 
     train_loss_meter = AverageMeter()
-    # train_score_meter = AccuracyMeter()
+    train_score_meter = IoUMeter()
 
     train_loss_history = []
     train_score_history = []
@@ -114,15 +114,14 @@ def train_model(
 
         # Update score meter
         # Does it contribute to training time much?
-        # train_score_meter.update(y_batch, output.squeeze(1))
+        train_score_meter.update(output, y_batch)
 
-        if verbose and iter_num % print_every == 0:
-            t_loss_avg = train_loss_meter.compute_average()
-            # t_score = train_score_meter.compute_score()
-            t_score = 0.0
+        # if verbose and iter_num % print_every == 0:
+        #     t_loss_avg = train_loss_meter.compute_average()
+        #     t_score = train_score_meter.compute_score()
 
-            print('[train] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
-                .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
+        #     print('[train] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
+        #         .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
 
         
         if iter_num == valid_iter_num:
@@ -133,10 +132,10 @@ def train_model(
             # TODO: one more train meters to reset it here?
 
             t_loss_avg = train_loss_meter.compute_average()
-            # t_score = train_score_meter.compute_score()
+            t_score = train_score_meter.compute_score()
             
             train_loss_history.append(t_loss_avg)
-            # train_score_history.append(t_score)
+            train_score_history.append(t_score)
 
             v_loss_avg = v_loss_meter.compute_average()
             v_score = v_score_meter.compute_score()
@@ -159,7 +158,7 @@ def train_model(
 
     train_info = {
         'train_loss_meter' : train_loss_meter,
-        # 'train_score_meter' : train_score_meter,
+        'train_score_meter' : train_score_meter,
 
         'train_loss_history' : train_loss_history,
         'train_score_history' : train_score_history,
