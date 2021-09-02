@@ -1,5 +1,23 @@
 import matplotlib.pyplot as plt
 
+def show_predictions(chip, label, pred):    
+    _, axes = plt.subplots(1, 2, figsize=(10,5))
+    
+    axes[0].set_title("Label")
+    axes[0].grid(False)
+    axes[0].axis('off')
+    axes[0].imshow(chip[1], cmap='gray')
+    axes[0].imshow(label, cmap="cool", alpha=1)
+
+    axes[1].set_title("Prediction")
+    axes[1].grid(False)
+    axes[1].axis('off')
+    axes[1].imshow(chip[1], cmap='gray')
+    axes[1].imshow(pred, cmap="cool", alpha=0.5)
+    
+    # TODO: show intersection and union pixels
+    # axes[2].set_title("IoU")
+
 # cmap = gray, bone
 def show_image(image, cmap=None):
     # plt.figure(figsize=(5,5))

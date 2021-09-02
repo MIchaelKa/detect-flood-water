@@ -5,6 +5,11 @@ from metrics import AverageMeter, IoUMeter
 
 from utils import format_time
 
+def compute_prediction(output):
+    preds = torch.softmax(output, dim=1)[:, 1]
+    preds = (preds > 0.5) * 1
+    return preds
+
 def get_next_valid_iter(valid_iters):
     if len(valid_iters) > 0:
         return valid_iters.pop(0)
@@ -37,7 +42,8 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
             loss_meter.update(loss_item)
 
             # Update score meter
-            score_meter.update(output, y_batch)
+            preds = compute_prediction(output)
+            score_meter.update(preds, y_batch)
 
             if verbose and iter_num % print_every == 0:
                 loss_avg = loss_meter.compute_average()
@@ -114,7 +120,8 @@ def train_model(
 
         # Update score meter
         # Does it contribute to training time much?
-        train_score_meter.update(output, y_batch)
+        preds = compute_prediction(output)
+        train_score_meter.update(preds, y_batch)
 
         # if verbose and iter_num % print_every == 0:
         #     t_loss_avg = train_loss_meter.compute_average()

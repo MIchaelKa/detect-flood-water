@@ -169,5 +169,6 @@ def run(
     )
 
     train_info['valid_loader'] = valid_loader
+    train_info['valid_dataset'] = valid_dataset
 
     return train_info

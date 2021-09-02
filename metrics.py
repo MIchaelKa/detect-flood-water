@@ -65,13 +65,7 @@ class IoUMeter(BaseMeter):
         self.intersection = 0
         self.union = 0
 
-    def compute_prediction(self, output):
-        preds = torch.softmax(output, dim=1)[:, 1]
-        preds = (preds > 0.5) * 1
-        return preds
-
-    def update(self, output, target):
-        preds = self.compute_prediction(output)
+    def update(self, preds, target):
         intersection, union = intersection_and_union(preds, target)
 
         self.intersection += intersection
@@ -79,6 +73,7 @@ class IoUMeter(BaseMeter):
 
         batch_iou = intersection / union
         self.history.append(batch_iou)
+        return batch_iou
 
     def compute_score(self):
         return self.intersection / self.union
