@@ -33,22 +33,18 @@ class FloodDataset(Dataset):
         x_arr = np.clip(x_arr, min_norm, max_norm)
         x_arr = (x_arr - min_norm) / (max_norm - min_norm)
 
-        # Apply data augmentations, if provided
-        if self.transforms:
-            x_arr = self.transforms(image=x_arr)["image"]
-        x_arr = np.transpose(x_arr, [2, 0, 1])
-
-        # Prepare sample dictionary
-        sample = {"chip_id": img.chip_id, "chip": x_arr}
-
         # Load label if available - training only
         if self.label is not None:
             label_path = self.label.loc[idx].label_path
             with rasterio.open(label_path) as lp:
                 y_arr = lp.read(1)
-            # Apply same data augmentations to label
+
+            # Apply data augmentations, if provided
             if self.transforms:
-                y_arr = self.transforms(image=y_arr)["image"]
-            sample["label"] = y_arr
+                t = self.transforms(image=x_arr, mask=y_arr)
+                x_arr, y_arr = t['image'], t['mask']
+
+        x_arr = np.transpose(x_arr, [2, 0, 1])
+        sample = {"chip_id": img.chip_id, "chip": x_arr, "label": y_arr}
 
         return sample

@@ -80,7 +80,9 @@ def train_model(
     valid_loss_history = []
     valid_score_history = []
 
-    # model = model.to(device)
+    valid_best_score = 0
+    best_score_iter = 0
+
     model.train()
     
     data_loader_iter = iter(data_loader)
@@ -150,6 +152,15 @@ def train_model(
             valid_loss_history.append(v_loss_avg)
             valid_score_history.append(v_score)
 
+            # v_loss_avg is better?
+            if v_score > valid_best_score:
+                valid_best_score = v_score
+                best_score_iter = iter_num
+
+                #save model
+                # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
+                torch.save(model.state_dict(), f'pth/unet_resnet_18_1.pth')
+
             # TODO: move out and see performance and time
             model.train()
 
@@ -161,6 +172,7 @@ def train_model(
                 print('')
 
     if verbose:
+        print('[valid] best score = {:.5f}, iter: {:>4d}'.format(valid_best_score, best_score_iter))
         print('[train] finished for: {}'.format(format_time(time.time() - t0)))
 
     train_info = {
@@ -176,7 +188,10 @@ def train_model(
         'valid_loss_history' : valid_loss_history,
         'valid_score_history' : valid_score_history,
 
-        'valid_iters' : valid_iters
+        'valid_iters' : valid_iters,
+
+        'best_score' : valid_best_score,
+        'best_score_iter' : best_score_iter,
     }
 
     return train_info

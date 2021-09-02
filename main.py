@@ -8,6 +8,7 @@ from utils import get_device, seed_everything
 from dataset import FloodDataset
 from pathlib import Path
 from pandas_path import path
+from transform import get_train_transform
 
 import torch
 import torch.nn as nn
@@ -105,7 +106,10 @@ def get_dataset(
         val_y = val_y.head(valid_number)
         print(f'[data] Reduced dataset size, train: {len(train_x)}, valid: {len(val_x)}')
 
-    train_dataset = FloodDataset(train_x, train_y, transforms=None)
+    # TODO: play with it!
+    crop_size = 256
+
+    train_dataset = FloodDataset(train_x, train_y, transforms=get_train_transform(crop_size))
     valid_dataset = FloodDataset(val_x, val_y, transforms=None)
 
     return train_dataset, valid_dataset

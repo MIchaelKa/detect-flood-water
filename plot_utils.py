@@ -26,6 +26,14 @@ def show_image(image, cmap=None):
     plt.imshow(image, cmap=cmap)
     plt.show()
 
+def show_image_and_label(image, label, cmap=None):
+    # plt.figure(figsize=(5,5))
+    plt.grid(False)
+    plt.axis('off')
+    plt.imshow(image, cmap=cmap)
+    plt.imshow(label, cmap="cool", alpha=0.5)
+    plt.show()
+
 def show_train_metrics(loss_meter, score_meter):
     _, axes = plt.subplots(1, 2, figsize=(15,5))
 
