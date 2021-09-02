@@ -160,6 +160,9 @@ def train_model(
         'train_loss_meter' : train_loss_meter,
         'train_score_meter' : train_score_meter,
 
+        'valid_loss_meter' : v_loss_meter,
+        'valid_score_meter' : v_score_meter,
+
         'train_loss_history' : train_loss_history,
         'train_score_history' : train_score_history,
 

@@ -22,18 +22,18 @@ def show_train_metrics(loss_meter, score_meter):
     # plt.title('Train metrics')
     plt.plot()
 
-def show_loss_and_score(train_info):
+def show_loss_and_score(train_info, start_from=0):
     _, axes = plt.subplots(1, 2, figsize=(15,5))
 
-    valid_iters = train_info['valid_iters']
+    valid_iters = train_info['valid_iters'][start_from:]
 
     axes[0].set_title("Loss")
-    axes[0].plot(valid_iters, train_info['train_loss_history'], '-o')
-    axes[0].plot(valid_iters, train_info['valid_loss_history'], '-o')
+    axes[0].plot(valid_iters, train_info['train_loss_history'][start_from:], '-o')
+    axes[0].plot(valid_iters, train_info['valid_loss_history'][start_from:], '-o')
     # axes[0].set_xticks(valid_iters)
     axes[0].legend(['train', 'val'], loc='upper right')
     
     axes[1].set_title("Scores")
-    axes[1].plot(valid_iters, train_info['train_score_history'], '-o')
-    axes[1].plot(valid_iters, train_info['valid_score_history'], '-o')
+    axes[1].plot(valid_iters, train_info['train_score_history'][start_from:], '-o')
+    axes[1].plot(valid_iters, train_info['valid_score_history'][start_from:], '-o')
     axes[1].legend(['train', 'val'], loc='lower right')

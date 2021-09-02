@@ -147,6 +147,10 @@ def run(
 
     print(f'[data] DataLoader size, train: {len(train_loader)}, valid: {len(valid_loader)}')
 
+    num_train_samples = batch_size_train * max_iter
+    num_epoch = max_iter / len(train_loader)
+    print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
+
     loss = nn.CrossEntropyLoss(ignore_index=255)
 
     optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
@@ -163,5 +167,7 @@ def run(
         verbose=valid_iters,
         # print_every=2
     )
+
+    train_info['valid_loader'] = valid_loader
 
     return train_info
