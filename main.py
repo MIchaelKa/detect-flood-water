@@ -57,7 +57,7 @@ def get_paths_by_chip(image_level_df):
         paths.append([chip, vv_path, vh_path])
     return pd.DataFrame(paths, columns=["chip_id", "vv_path", "vh_path"])
 
-def get_dataset(
+def prepare_data(
     path_to_data,
     reduce_train,
     train_number,
@@ -105,6 +105,18 @@ def get_dataset(
         val_x = val_x.head(valid_number)
         val_y = val_y.head(valid_number)
         print(f'[data] Reduced dataset size, train: {len(train_x)}, valid: {len(val_x)}')
+
+    return train_x, train_y, val_x, val_y
+
+
+def get_dataset(
+    path_to_data,
+    reduce_train,
+    train_number,
+    valid_number
+    ):
+
+    train_x, train_y, val_x, val_y = prepare_data(path_to_data, reduce_train, train_number, valid_number)  
 
     # TODO: play with it!
     crop_size = 256
