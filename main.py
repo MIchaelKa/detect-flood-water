@@ -14,6 +14,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+#
+# utils
+#
+
 def get_optimizer(name, parameters, lr, weight_decay):
     
     if name == 'Adam':
@@ -37,6 +41,68 @@ def get_optimizer(name, parameters, lr, weight_decay):
         print("[error]: Unsupported optimizer.")
     
     return optimizer
+
+#
+# scheduler
+#
+
+def test_scheduler(learning_rate, max_iter, scheduler_params):
+    lr_history = []
+
+    params = (torch.tensor([1,2,3]) for t in range(2))
+    optimizer = torch.optim.Adam(params, lr=learning_rate)
+
+    scheduler = get_scheduler(optimizer, max_iter, scheduler_params)
+
+    for epoch in range(max_iter):
+        optimizer.step()
+        lr_history.append(scheduler.get_last_lr())
+        scheduler.step()
+
+    return lr_history
+
+def get_scheduler(optimizer, max_iter, scheduler_params):
+    name = scheduler_params['name']
+
+    if name == 'CosineAnnealingLR':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=max_iter,
+            eta_min=1e-6,
+            last_epoch=-1
+        )
+    elif name == 'CosineAnnealingWarmRestarts':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            optimizer,
+            T_0=766*2,
+            T_mult=2,
+            eta_min=1e-6,
+            last_epoch=-1
+        )
+    elif name == 'OneCycleLR':
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=scheduler_params['max_lr'],
+            total_steps=max_iter,
+            anneal_strategy='linear',
+            pct_start=scheduler_params['pct_start']
+        )
+    elif name == 'MultiStepLR':
+        milestones = scheduler_params['milestones']
+        gamma = scheduler_params['gamma']
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=gamma)
+    elif name == 'StepLR':
+        step_size = scheduler_params['step_size']
+        gamma = scheduler_params['gamma']
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    elif name == 'None':
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [max_iter], gamma=1)
+
+    return scheduler
+
+#
+# data
+#
 
 # Helper function for pivoting out paths by chip
 def get_paths_by_chip(image_level_df):
@@ -126,6 +192,10 @@ def get_dataset(
 
     return train_dataset, valid_dataset
 
+#
+# run
+#
+
 def run(
     model,
     device,
@@ -144,6 +214,9 @@ def run(
     learning_rate=3e-4,
     weight_decay=1e-3,
 
+    scheduler_params=None,
+
+    save_model=False,
     verbose=True
 ):
 
@@ -171,6 +244,8 @@ def run(
 
     optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
 
+    scheduler = get_scheduler(optimizer, max_iter, scheduler_params)
+
     train_info = train_model(
         model=model,
         device=device,
@@ -178,8 +253,10 @@ def run(
         valid_loader=valid_loader,
         criterion=loss,
         optimizer=optimizer,
+        scheduler=scheduler,
         max_iter=max_iter,
         valid_iters=valid_iters,
+        save_model=save_model,
         verbose=valid_iters,
         # print_every=2
     )

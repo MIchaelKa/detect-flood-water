@@ -61,8 +61,10 @@ def train_model(
     valid_loader,
     criterion,
     optimizer,
+    scheduler,
     max_iter,
     valid_iters=[],
+    save_model=False,
     verbose=True,
     print_every=10
     ):
@@ -79,6 +81,8 @@ def train_model(
 
     valid_loss_history = []
     valid_score_history = []
+
+    lr_history = []
 
     valid_best_score = 0
     best_score_iter = 0
@@ -125,6 +129,11 @@ def train_model(
         preds = compute_prediction(output)
         train_score_meter.update(preds, y_batch)
 
+        # Get the last learning rate computed by the scheduler
+        lr_history.append(scheduler.get_last_lr())
+        # Scheduler update
+        scheduler.step()           
+
         # if verbose and iter_num % print_every == 0:
         #     t_loss_avg = train_loss_meter.compute_average()
         #     t_score = train_score_meter.compute_score()
@@ -157,9 +166,9 @@ def train_model(
                 valid_best_score = v_score
                 best_score_iter = iter_num
 
-                #save model
-                # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
-                torch.save(model.state_dict(), f'pth/unet_resnet_18_1.pth')
+                if save_model:
+                    # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
+                    torch.save(model.state_dict(), f'pth/unet_resnet_18_1.pth')
 
             # TODO: move out and see performance and time
             model.train()
@@ -187,6 +196,8 @@ def train_model(
 
         'valid_loss_history' : valid_loss_history,
         'valid_score_history' : valid_score_history,
+
+        'lr_history' : lr_history,
 
         'valid_iters' : valid_iters,
 

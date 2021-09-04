@@ -32,9 +32,9 @@ class AverageMeter(BaseMeter):
         return np.mean(self.history)
 
 
-import torch
-
+# import torch
 # TODO: does converting to cpu make computation longer?
+
 def intersection_and_union(pred, true):
     """
     Calculates intersection and union for a batch of images.
