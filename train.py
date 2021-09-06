@@ -5,6 +5,10 @@ from metrics import AverageMeter, IoUMeter
 
 from utils import format_time
 
+def set_encoder_grad(model, requires_grad):
+    for param in model.encoder.parameters():
+        param.requires_grad = requires_grad
+
 def compute_prediction(output):
     preds = torch.softmax(output, dim=1)[:, 1]
     preds = (preds > 0.5) * 1
@@ -24,6 +28,7 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
     
     loss_meter = AverageMeter()
     score_meter = IoUMeter()
+    outputs = []
 
     with torch.no_grad():
         for iter_num, data_dict in enumerate(valid_loader):
@@ -45,6 +50,10 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
             preds = compute_prediction(output)
             score_meter.update(preds, y_batch)
 
+            # Save outputs
+            probs = torch.softmax(output, dim=1)[:, 1]
+            outputs.append(probs.reshape(-1).detach().cpu().numpy())
+
             if verbose and iter_num % print_every == 0:
                 loss_avg = loss_meter.compute_average()
                 v_score = score_meter.compute_score()
@@ -52,7 +61,7 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
                 print('[valid] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
                     .format(iter_num, loss_avg, v_score, format_time(time.time() - t0)))
    
-    return loss_meter, score_meter
+    return loss_meter, score_meter, outputs
 
 def train_model(
     model,
@@ -63,8 +72,10 @@ def train_model(
     optimizer,
     scheduler,
     max_iter,
+    unfreeze_iter,
     valid_iters=[],
     save_model=False,
+    model_save_name='model',
     verbose=True,
     print_every=10
     ):
@@ -88,6 +99,10 @@ def train_model(
     best_score_iter = 0
 
     model.train()
+
+    if unfreeze_iter > 0:
+        print('[train] freeze encoder.')
+        set_encoder_grad(model, False)
     
     data_loader_iter = iter(data_loader)
 
@@ -141,11 +156,14 @@ def train_model(
         #     print('[train] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
         #         .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
 
-        
+        if iter_num == unfreeze_iter and unfreeze_iter > 0:
+            print('[train] unfreeze encoder.')
+            set_encoder_grad(model, True)
+
         if iter_num == valid_iter_num:
             valid_iter_num = get_next_valid_iter(valid_iters_copy)
 
-            v_loss_meter, v_score_meter = validate(model, device, valid_loader, criterion, verbose=False, print_every=5)
+            v_loss_meter, v_score_meter, outputs = validate(model, device, valid_loader, criterion, verbose=False, print_every=5)
 
             # TODO: one more train meters to reset it here?
 
@@ -168,8 +186,8 @@ def train_model(
 
                 if save_model:
                     # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
-                    torch.save(model.state_dict(), f'pth/unet_resnet_18_1.pth')
-
+                    torch.save(model.state_dict(), f'pth/{model_save_name}.pth')
+                    
             # TODO: move out and see performance and time
             model.train()
 
@@ -190,6 +208,7 @@ def train_model(
 
         'valid_loss_meter' : v_loss_meter,
         'valid_score_meter' : v_score_meter,
+        'valid_outputs' : outputs,
 
         'train_loss_history' : train_loss_history,
         'train_score_history' : train_score_history,

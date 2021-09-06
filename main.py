@@ -14,6 +14,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+from loss import XEDiceLoss
+
 #
 # utils
 #
@@ -208,6 +210,7 @@ def run(
     batch_size_train=32,
     batch_size_valid=32,
     max_iter=100,
+    unfreeze_iter=0,
     valid_iters=[],
 
     optimizer_name='Adam',
@@ -217,6 +220,8 @@ def run(
     scheduler_params=None,
 
     save_model=False,
+    model_save_name='model',
+    
     verbose=True
 ):
 
@@ -240,7 +245,8 @@ def run(
     num_epoch = max_iter / len(train_loader)
     print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
 
-    loss = nn.CrossEntropyLoss(ignore_index=255)
+    # loss = nn.CrossEntropyLoss(ignore_index=255)
+    loss = XEDiceLoss()
 
     optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
 
@@ -255,8 +261,10 @@ def run(
         optimizer=optimizer,
         scheduler=scheduler,
         max_iter=max_iter,
+        unfreeze_iter=unfreeze_iter,
         valid_iters=valid_iters,
         save_model=save_model,
+        model_save_name=model_save_name,
         verbose=valid_iters,
         # print_every=2
     )

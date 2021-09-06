@@ -1,5 +1,32 @@
 import matplotlib.pyplot as plt
 
+import numpy as np 
+
+def show_dataset(dataset, start_index, count):
+    
+    indices = np.arange(start_index, start_index+count)
+    print(indices)
+    
+    size = 5
+    plt.figure(figsize=(count*size,size))
+    
+    for i, index in enumerate(indices):    
+
+        sample_data = dataset[index]
+        chip = sample_data['chip']
+        label = sample_data['label']
+        label_to_show = np.ma.masked_where((label == 0) | (label == 255), label)
+
+        plt.subplot(1,count,i+1)
+        plt.grid(False)
+        plt.axis('off')
+        
+        label_sum = (1 - label_to_show.mask).sum()
+        plt.title(f'Shape: {chip.shape}\nLabel: {label_sum}', fontsize=16)
+      
+        plt.imshow(chip[1], cmap="gray")
+        plt.imshow(label_to_show, cmap="cool", alpha=0.5)
+
 def show_predictions(chip, label, pred):    
     _, axes = plt.subplots(1, 2, figsize=(10,5))
     

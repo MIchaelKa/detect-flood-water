@@ -1,11 +1,25 @@
-import albumentations
-# import albumentations as A
+import albumentations as A
 
 def get_train_transform(crop_size):
-    transform = albumentations.Compose([
-        albumentations.RandomCrop(crop_size, crop_size),
-        # albumentations.RandomRotate90(),
-        # albumentations.HorizontalFlip(),
-        # albumentations.VerticalFlip(),
+    transform = A.Compose([
+
+        # A.OpticalDistortion(
+        #     distort_limit=(0,1),
+        #     shift_limit=0.5,
+        #     # border_mode=0,
+        #     p=0.5
+        # ),
+
+        A.RandomCrop(crop_size, crop_size),
+
+        # A.RandomRotate90(),
+        # A.HorizontalFlip(),
+        # A.VerticalFlip(),
+
+        # A.RandomSizedCrop(
+        #     min_max_height=(256, 512),
+        #     height=crop_size,
+        #     width=crop_size,
+        # )
     ])
     return transform
