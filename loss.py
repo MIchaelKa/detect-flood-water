@@ -6,9 +6,10 @@ class XEDiceLoss(nn.Module):
     Computes (0.5 * CrossEntropyLoss) + (0.5 * DiceLoss).
     """
 
-    def __init__(self):
+    def __init__(self, dice_ratio=0):
         super().__init__()
         self.xe = nn.CrossEntropyLoss(reduction="none")
+        self.dice_ratio = dice_ratio
 
     def forward(self, pred, true):
         valid_pixel_mask = true.ne(255)  # valid pixel mask
@@ -24,6 +25,4 @@ class XEDiceLoss(nn.Module):
         true = true.masked_select(valid_pixel_mask)
         dice_loss = 1 - (2.0 * torch.sum(pred * true)) / (torch.sum(pred + true) + 1e-7)
 
-        # return (0 * xe_loss) + (1 * dice_loss)
-        return (0.5 * xe_loss) + (0.5 * dice_loss)
-        # return (1 * xe_loss) + (0 * dice_loss)
+        return ((1 - self.dice_ratio) * xe_loss) + (self.dice_ratio * dice_loss)

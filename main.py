@@ -149,8 +149,10 @@ def prepare_data(
         / train_metadata.chip_id.path.with_suffix(".tif").path
     )
 
-    flood_ids = train_metadata.flood_id.unique().tolist()
-    val_flood_ids = random.sample(flood_ids, 3)
+    # flood_ids = train_metadata.flood_id.unique().tolist()
+    # val_flood_ids = random.sample(flood_ids, 3)
+    # val_flood_ids = ['kuo', 'tht', 'qus']
+    val_flood_ids = ['qus', 'hxu', 'pxs']
     print(f'[data] flood_ids: {val_flood_ids}')
 
     valid_df = train_metadata[train_metadata.flood_id.isin(val_flood_ids)]
@@ -188,8 +190,13 @@ def get_dataset(
 
     # TODO: play with it!
     crop_size = 256
+    train_transform = get_train_transform(crop_size)
+  
+    # print('\n[data] train_transform:')
+    # print(train_transform)
+    # print('')
 
-    train_dataset = FloodDataset(train_x, train_y, transforms=get_train_transform(crop_size))
+    train_dataset = FloodDataset(train_x, train_y, transforms=train_transform)
     valid_dataset = FloodDataset(val_x, val_y, transforms=None)
 
     return train_dataset, valid_dataset
@@ -245,8 +252,8 @@ def run(
     num_epoch = max_iter / len(train_loader)
     print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
 
-    # loss = nn.CrossEntropyLoss(ignore_index=255)
-    loss = XEDiceLoss()
+    loss = nn.CrossEntropyLoss(ignore_index=255)
+    # loss = XEDiceLoss(dice_ratio=0)
 
     optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
 
