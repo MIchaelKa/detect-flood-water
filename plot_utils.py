@@ -1,6 +1,167 @@
 import matplotlib.pyplot as plt
 
-import numpy as np 
+import numpy as np
+
+#
+# Helper functions for visualizing Sentinel-1 images
+#
+def scale_img(matrix):
+    """
+    Returns a scaled (H, W, D) image that is visually inspectable.
+    Image is linearly scaled between min_ and max_value, by channel.
+
+    Args:
+        matrix (np.array): (H, W, D) image to be scaled
+
+    Returns:
+        np.array: Image (H, W, 3) ready for visualization
+    """
+    # Set min/max values
+    min_values = np.array([-23, -28, 0.2])
+    max_values = np.array([0, -5, 1])
+
+    # Reshape matrix
+    w, h, d = matrix.shape
+    matrix = np.reshape(matrix, [w * h, d]).astype(np.float64)
+
+    # Scale by min/max
+    matrix = (matrix - min_values[None, :]) / (
+        max_values[None, :] - min_values[None, :]
+    )
+    matrix = np.reshape(matrix, [w, h, d])
+
+    # Limit values to 0/1 interval
+    return matrix.clip(0, 1)
+
+
+def create_false_color_composite(vv_img, vh_img):
+    """
+    Returns a S1 false color composite for visualization.
+
+    Returns:
+        np.array: image (H, W, 3) ready for visualization
+    """
+
+    # Stack arrays along the last dimension
+    s1_img = np.stack((vv_img, vh_img), axis=-1)
+
+    # Create false color composite
+    img = np.zeros((512, 512, 3), dtype=np.float32)
+    img[:, :, :2] = s1_img.copy()
+    img[:, :, 2] = s1_img[:, :, 0] / s1_img[:, :, 1]
+
+    return scale_img(img)
+
+#
+# images
+#
+
+import rasterio
+
+def show_image_hist_by_id(chip_id, data):
+    row = data[data.chip_id == chip_id].iloc[0]
+    show_image_hist(row)
+
+def show_image_hist_by_iloc(idx, data):
+    row = data.iloc[idx]
+    show_image_hist(row)
+
+def show_image_hist(row):
+    print(f'Flood: {row.flood_id}')
+    print(f'Chip: {row.chip_id}')
+
+    with rasterio.open(row.vv_path) as vv:
+        vv_img = vv.read(1)
+    with rasterio.open(row.vh_path) as vh:
+        vh_img = vh.read(1)
+    with rasterio.open(row.label_path) as lp:
+        lp_img = lp.read(1)    
+        
+    s1_img = create_false_color_composite(vv_img, vh_img)  
+    label_to_show = np.ma.masked_where((lp_img == 0) | (lp_img == 255), lp_img)
+
+    _, axes = plt.subplots(1, 3, figsize=(15,5))
+
+    axes[0].set_title("False colors", fontsize=14)
+    axes[0].imshow(s1_img)
+    axes[0].imshow(label_to_show, cmap="cool", alpha=0.6)
+    axes[0].grid(False)
+    axes[0].axis('off')
+
+    label_mask = np.ma.masked_where((lp_img == 0) | (lp_img == 255), vv_img)
+    ground_mask = np.ma.masked_where((lp_img == 1) | (lp_img == 255), vv_img)
+    mask = np.ma.masked_where((lp_img == 1) | (lp_img == 0), vv_img)
+    data = [label_mask.compressed(), ground_mask.compressed(), mask.compressed()]
+    labels = ['label', 'ground', 'mask']
+
+    axes[1].set_title("VV hist", fontsize=14)
+    axes[1].hist(data, bins=50, histtype='barstacked', label=labels)
+    axes[1].legend()
+
+    label_mask = np.ma.masked_where((lp_img == 0) | (lp_img == 255), vh_img)
+    ground_mask = np.ma.masked_where((lp_img == 1) | (lp_img == 255), vh_img)
+    mask = np.ma.masked_where((lp_img == 1) | (lp_img == 0), vh_img)
+    data = [label_mask.compressed(), ground_mask.compressed(), mask.compressed()]
+    labels = ['label', 'ground', 'mask']
+
+    axes[2].set_title("VH hist", fontsize=14)
+    axes[2].hist(data, bins=50, histtype='barstacked', label=labels)
+    axes[2].legend()
+
+
+
+def show_chip_by_id(chip_id, data):
+    row = data[data.chip_id == chip_id].iloc[0]
+    show_data_row(row)
+
+def show_chip_by_index(idx, data):
+    row = data.loc[idx]
+    show_data_row(row)
+
+def show_chip_by_iloc(idx, data):
+    row = data.iloc[idx]
+    show_data_row(row)
+
+def show_data_row(row):    
+    print(f'Flood: {row.flood_id}')
+    print(f'Chip: {row.chip_id}')
+    
+    with rasterio.open(row.vv_path) as vv:
+        vv_img = vv.read(1)
+    with rasterio.open(row.vh_path) as vh:
+        vh_img = vh.read(1)
+    with rasterio.open(row.label_path) as lp:
+        lp_img = lp.read(1)    
+        
+
+    s1_img = create_false_color_composite(vv_img, vh_img)  
+    label_to_show = np.ma.masked_where((lp_img == 0) | (lp_img == 255), lp_img)
+    
+    label_sum = (1 - label_to_show.mask).sum()
+    print(f'Label: {label_sum}')
+    
+    _, axes = plt.subplots(1, 4, figsize=(20,5))
+    
+    axes[0].imshow(s1_img)
+    axes[0].set_title("False colors", fontsize=14)
+    axes[0].grid(False)
+    axes[0].axis('off')
+    
+    axes[1].imshow(vv_img, cmap="gray")
+    axes[1].set_title("VV", fontsize=14)
+    axes[1].grid(False)
+    axes[1].axis('off')
+    
+    axes[2].imshow(vh_img, cmap="gray")
+    axes[2].set_title("VH", fontsize=14)
+    axes[2].grid(False)
+    axes[2].axis('off')
+    
+    axes[3].imshow(s1_img)
+    axes[3].imshow(label_to_show, cmap="cool", alpha=1)
+    axes[3].set_title("Label", fontsize=14)
+    axes[3].grid(False)
+    axes[3].axis('off')
 
 def show_dataset(dataset, start_index, count):
     
@@ -60,6 +221,10 @@ def show_image_and_label(image, label, cmap=None):
     plt.imshow(image, cmap=cmap)
     plt.imshow(label, cmap="cool", alpha=0.5)
     plt.show()
+
+#
+# metrics
+#
 
 def show_train_metrics(loss_meter, score_meter):
     _, axes = plt.subplots(1, 2, figsize=(15,5))
