@@ -12,14 +12,16 @@ def get_train_transform(crop_size):
         #     p=0.5
         # ),
 
-        A.RandomRotate90(),
-        A.HorizontalFlip(),
-        A.VerticalFlip(),
+        # A.RandomRotate90(),
+        # A.HorizontalFlip(),
+        # A.VerticalFlip(),
 
         # A.RandomSizedCrop(
         #     min_max_height=(256, 512),
         #     height=crop_size,
         #     width=crop_size,
         # )
-    ])
+        ],
+        additional_targets={'invalid_mask': 'mask'}
+    )
     return transform

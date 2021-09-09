@@ -27,6 +27,7 @@ class FloodDataset(Dataset):
         with rasterio.open(img.vh_path) as vh:
             vh_path = vh.read(1)
         x_arr = np.stack([vv_path, vh_path], axis=-1)
+        vv_mask = (1 - vv_mask.mask)
 
         # Min-max normalization
         min_norm = -77
@@ -42,10 +43,15 @@ class FloodDataset(Dataset):
 
             # Apply data augmentations, if provided
             if self.transforms:
-                t = self.transforms(image=x_arr, mask=y_arr)
-                x_arr, y_arr = t['image'], t['mask']
+                t = self.transforms(image=x_arr, mask=y_arr, invalid_mask=vv_mask)
+                x_arr, y_arr, vv_mask = t['image'], t['mask'], t['invalid_mask']
 
         x_arr = np.transpose(x_arr, [2, 0, 1])
-        sample = {"chip_id": img.chip_id, "chip": x_arr, "label": y_arr, "mask": (1 - vv_mask.mask)}
+        sample = {
+            "chip_id": img.chip_id,
+            "chip": x_arr,
+            "label": y_arr,
+            # "mask": vv_mask,
+            "flood_id": img.flood_id}
 
         return sample

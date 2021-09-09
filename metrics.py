@@ -65,6 +65,9 @@ class IoUMeter(BaseMeter):
         self.intersection = 0
         self.union = 0
 
+        self.intersection_by_flood_id = {}
+        self.union_by_flood_id = {}
+
     def update(self, preds, target):
         intersection, union = intersection_and_union(preds, target)
 
@@ -75,6 +78,39 @@ class IoUMeter(BaseMeter):
         self.history.append(batch_iou)
         return batch_iou
 
+    def update_with_flood_id(self, preds, target, flood_id_batch):
+        intersection, union = intersection_and_union(preds, target)
+
+        self.intersection += intersection
+        self.union += union
+
+        batch_iou = intersection / union
+        self.history.append(batch_iou)
+
+        # print(preds.shape, target.shape)
+
+        # IoU by floods
+        flood_ids = np.unique(flood_id_batch)
+        for flood_id in flood_ids:
+            if flood_id not in self.intersection_by_flood_id:
+                # print(f'new flood_id: {flood_id}')
+                self.intersection_by_flood_id[flood_id] = 0
+                self.union_by_flood_id[flood_id] = 0
+
+            batch_mask = (flood_id_batch == flood_id)
+            intersection, union = intersection_and_union(preds[batch_mask], target[batch_mask])
+
+            self.intersection_by_flood_id[flood_id] += intersection
+            self.union_by_flood_id[flood_id] += union
+  
+        return batch_iou
+
     def compute_score(self):
         return self.intersection / self.union
+
+    def compute_score_by_flood_id(self):
+        scores = {}
+        for key in self.intersection_by_flood_id.keys():
+            scores[key] = self.intersection_by_flood_id[key] / self.union_by_flood_id[key]
+        return scores
 

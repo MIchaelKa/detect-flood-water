@@ -178,6 +178,8 @@ def show_dataset(dataset, start_index, count):
         label = sample_data['label']
         label_to_show = np.ma.masked_where((label == 0) | (label == 255), label)
 
+        mask = sample_data['mask']
+
         plt.subplot(1,count,i+1)
         plt.grid(False)
         plt.axis('off')
@@ -187,6 +189,8 @@ def show_dataset(dataset, start_index, count):
       
         plt.imshow(chip[1], cmap="gray")
         plt.imshow(label_to_show, cmap="cool", alpha=0.5)
+
+        plt.imshow(mask, alpha=0.2)
 
 def show_predictions(chip, label, pred):    
     _, axes = plt.subplots(1, 2, figsize=(10,5))
@@ -255,3 +259,14 @@ def show_loss_and_score(train_info, start_from=0):
     axes[1].plot(valid_iters, train_info['train_score_history'][start_from:], '-o')
     axes[1].plot(valid_iters, train_info['valid_score_history'][start_from:], '-o')
     axes[1].legend(['train', 'val'], loc='lower right')
+
+def show_valid_score_by_flood(train_info):  
+    valid_iters = train_info['valid_iters']
+    valid_score_by_flood_id = train_info['valid_score_by_flood_id']
+    flood_ids = list(valid_score_by_flood_id.keys())
+
+    _, axes = plt.subplots(1, len(flood_ids), figsize=(20,5))
+
+    for i, flood_id in enumerate(flood_ids):
+        axes[i].set_title(flood_id)
+        axes[i].plot(valid_iters, valid_score_by_flood_id[flood_id], '-o')

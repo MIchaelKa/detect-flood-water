@@ -1,6 +1,10 @@
 import torch
 import time
 
+# TODO: only for np.array(flood_id_batch)
+# does it make sense to separate files which has dependencies to torch, numpy, pandas etc.
+import numpy as np
+
 from metrics import AverageMeter, IoUMeter
 
 from utils import format_time
@@ -9,9 +13,9 @@ def set_encoder_grad(model, requires_grad):
     for param in model.encoder.parameters():
         param.requires_grad = requires_grad
 
-def compute_prediction(output, mask):
+def compute_prediction(output):
     preds = torch.softmax(output, dim=1)[:, 1]
-    preds *= mask
+    # preds *= mask
     preds = (preds > 0.5) * 1
     return preds
 
@@ -36,11 +40,13 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
 
             x_batch = data_dict['chip']
             y_batch = data_dict['label']
-            mask_batch = data_dict['mask']
+            # mask_batch = data_dict['mask']
+            flood_id_batch = data_dict['flood_id']
 
             x_batch = x_batch.to(device, dtype=torch.float32)
             y_batch = y_batch.to(device, dtype=torch.long)
-            mask_batch = mask_batch.to(device)
+            # mask_batch = mask_batch.to(device)
+            flood_id_batch = np.array(flood_id_batch)
             
             output = model(x_batch)
             loss = criterion(output, y_batch)
@@ -50,8 +56,8 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
             loss_meter.update(loss_item)
 
             # Update score meter
-            preds = compute_prediction(output, mask_batch)
-            score_meter.update(preds, y_batch)
+            preds = compute_prediction(output)
+            score_meter.update_with_flood_id(preds, y_batch, flood_id_batch)
 
             # Save outputs
             probs = torch.softmax(output, dim=1)[:, 1]
@@ -95,6 +101,7 @@ def train_model(
 
     valid_loss_history = []
     valid_score_history = []
+    valid_score_by_flood_id = {}
 
     lr_history = []
 
@@ -124,11 +131,11 @@ def train_model(
         # id_batch = data_dict['chip_id']
         x_batch = data_dict['chip']
         y_batch = data_dict['label']
-        mask_batch = data_dict['mask']
+        # mask_batch = data_dict['mask']
 
         x_batch = x_batch.to(device, dtype=torch.float32)
         y_batch = y_batch.to(device, dtype=torch.long)
-        mask_batch = mask_batch.to(device)
+        # mask_batch = mask_batch.to(device)
 
         # print(x_batch.shape)
 
@@ -146,7 +153,7 @@ def train_model(
 
         # Update score meter
         # Does it contribute to training time much?
-        preds = compute_prediction(output, mask_batch)
+        preds = compute_prediction(output)
         train_score_meter.update(preds, y_batch)
 
         # Get the last learning rate computed by the scheduler
@@ -180,9 +187,15 @@ def train_model(
 
             v_loss_avg = v_loss_meter.compute_average()
             v_score = v_score_meter.compute_score()
-
+            
             valid_loss_history.append(v_loss_avg)
             valid_score_history.append(v_score)
+
+            v_score_by_flood_id = v_score_meter.compute_score_by_flood_id()
+            for i, (k, v) in enumerate(v_score_by_flood_id.items()):
+                if k not in valid_score_by_flood_id:
+                    valid_score_by_flood_id[k] = []
+                valid_score_by_flood_id[k].append(v)
 
             # v_loss_avg is better?
             if v_score > valid_best_score:
@@ -191,7 +204,7 @@ def train_model(
 
                 if save_model:
                     # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
-                    torch.save(model.state_dict(), f'pth/{model_save_name}.pth')
+                    torch.save(model.state_dict(), f'pth/{model_save_name}_{iter_num}.pth')
                     
             # TODO: move out and see performance and time
             model.train()
@@ -201,6 +214,7 @@ def train_model(
                     .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
                 print('[valid] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
                     .format(iter_num, v_loss_avg, v_score, format_time(time.time() - t0)))
+                print('[valid] iter: {:>4d}, score = {}'.format(iter_num, v_score_by_flood_id))
                 print('')
 
     if verbose:
@@ -220,6 +234,7 @@ def train_model(
 
         'valid_loss_history' : valid_loss_history,
         'valid_score_history' : valid_score_history,
+        'valid_score_by_flood_id' : valid_score_by_flood_id,
 
         'lr_history' : lr_history,
 
