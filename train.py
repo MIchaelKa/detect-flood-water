@@ -9,8 +9,9 @@ def set_encoder_grad(model, requires_grad):
     for param in model.encoder.parameters():
         param.requires_grad = requires_grad
 
-def compute_prediction(output):
+def compute_prediction(output, mask):
     preds = torch.softmax(output, dim=1)[:, 1]
+    preds *= mask
     preds = (preds > 0.5) * 1
     return preds
 
@@ -35,9 +36,11 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
 
             x_batch = data_dict['chip']
             y_batch = data_dict['label']
+            mask_batch = data_dict['mask']
 
             x_batch = x_batch.to(device, dtype=torch.float32)
             y_batch = y_batch.to(device, dtype=torch.long)
+            mask_batch = mask_batch.to(device)
             
             output = model(x_batch)
             loss = criterion(output, y_batch)
@@ -47,7 +50,7 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
             loss_meter.update(loss_item)
 
             # Update score meter
-            preds = compute_prediction(output)
+            preds = compute_prediction(output, mask_batch)
             score_meter.update(preds, y_batch)
 
             # Save outputs
@@ -121,9 +124,11 @@ def train_model(
         # id_batch = data_dict['chip_id']
         x_batch = data_dict['chip']
         y_batch = data_dict['label']
+        mask_batch = data_dict['mask']
 
         x_batch = x_batch.to(device, dtype=torch.float32)
         y_batch = y_batch.to(device, dtype=torch.long)
+        mask_batch = mask_batch.to(device)
 
         # print(x_batch.shape)
 
@@ -141,7 +146,7 @@ def train_model(
 
         # Update score meter
         # Does it contribute to training time much?
-        preds = compute_prediction(output)
+        preds = compute_prediction(output, mask_batch)
         train_score_meter.update(preds, y_batch)
 
         # Get the last learning rate computed by the scheduler
