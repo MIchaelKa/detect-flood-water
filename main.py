@@ -182,7 +182,7 @@ def prepare_data(
     # val_flood_ids = random.sample(flood_ids, 3)
     # val_flood_ids = ['kuo', 'tht', 'qus']
     # val_flood_ids = ['qus', 'hxu', 'pxs']
-    # val_flood_ids = ['jja', 'hbe', 'wvy']
+    val_flood_ids = ['jja', 'hbe', 'wvy']
     print(f'[data] flood_ids: {val_flood_ids}')
 
     valid_df = train_metadata[train_metadata.flood_id.isin(val_flood_ids)]

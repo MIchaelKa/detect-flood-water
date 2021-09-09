@@ -203,8 +203,8 @@ def train_model(
                 best_score_iter = iter_num
 
                 if save_model:
-                    # torch.save(model.state_dict(), f'pth/unet_resnet_18_{iter_num}_0.pth')
-                    torch.save(model.state_dict(), f'pth/{model_save_name}_{iter_num}.pth')
+                    # torch.save(model.state_dict(), f'pth/{model_save_name}_{iter_num}.pth')
+                    torch.save(model.state_dict(), f'pth/{model_save_name}.pth')
                     
             # TODO: move out and see performance and time
             model.train()
