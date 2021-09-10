@@ -180,9 +180,9 @@ def prepare_data(
 
     # flood_ids = train_metadata.flood_id.unique().tolist()
     # val_flood_ids = random.sample(flood_ids, 3)
-    # val_flood_ids = ['kuo', 'tht', 'qus']
-    # val_flood_ids = ['qus', 'hxu', 'pxs']
-    val_flood_ids = ['jja', 'hbe', 'wvy']
+    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
+    # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
     print(f'[data] flood_ids: {val_flood_ids}')
 
     valid_df = train_metadata[train_metadata.flood_id.isin(val_flood_ids)]
