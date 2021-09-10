@@ -76,7 +76,7 @@ class IoUMeter(BaseMeter):
 
         batch_iou = intersection / union
         self.history.append(batch_iou)
-        return batch_iou
+        return batch_iou, intersection, union
 
     def update_with_flood_id(self, preds, target, flood_id_batch):
         intersection, union = intersection_and_union(preds, target)

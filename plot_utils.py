@@ -109,6 +109,16 @@ def show_image_hist(row):
     axes[2].legend()
 
 
+def get_chip_by_id(chip_id, data):
+    row = data[data.chip_id == chip_id].iloc[0]
+
+    with rasterio.open(row.vv_path) as vv:
+        vv_img = vv.read(1)
+    with rasterio.open(row.vh_path) as vh:
+        vh_img = vh.read(1)
+
+    s1_img = create_false_color_composite(vv_img, vh_img)  
+    return s1_img
 
 def show_chip_by_id(chip_id, data):
     row = data[data.chip_id == chip_id].iloc[0]
@@ -163,13 +173,18 @@ def show_data_row(row):
     axes[3].grid(False)
     axes[3].axis('off')
 
-def show_dataset(dataset, start_index, count):
+def show_dataset(dataset, start_index, count, show_mask=True, show_hist=False):
     
     indices = np.arange(start_index, start_index+count)
     print(indices)
-    
+
     size = 5
-    plt.figure(figsize=(count*size,size))
+    if show_hist:
+        plt.figure(figsize=(count*size,size*2))
+        rows = 2
+    else:
+        plt.figure(figsize=(count*size,size))
+        rows = 1
     
     for i, index in enumerate(indices):    
 
@@ -178,9 +193,7 @@ def show_dataset(dataset, start_index, count):
         label = sample_data['label']
         label_to_show = np.ma.masked_where((label == 0) | (label == 255), label)
 
-        mask = sample_data['mask']
-
-        plt.subplot(1,count,i+1)
+        plt.subplot(rows,count,i+1)
         plt.grid(False)
         plt.axis('off')
         
@@ -188,24 +201,36 @@ def show_dataset(dataset, start_index, count):
         plt.title(f'Shape: {chip.shape}\nLabel: {label_sum}', fontsize=16)
       
         plt.imshow(chip[1], cmap="gray")
-        plt.imshow(label_to_show, cmap="cool", alpha=0.5)
+        if show_mask:
+            plt.imshow(label_to_show, cmap="cool", alpha=0.5)
+        
+        if show_hist:
+            plt.subplot(rows,count,count+i+1)
+            plt.hist(chip.reshape(-1), bins=50)
 
-        plt.imshow(mask, alpha=0.2)
+def show_predictions(chip_to_show, chip, label, pred):    
+    _, axes = plt.subplots(1, 3, figsize=(15,5))
 
-def show_predictions(chip, label, pred):    
-    _, axes = plt.subplots(1, 2, figsize=(10,5))
+    fc_index = 1
+    label_index = 0
+    pred_index = 2
     
-    axes[0].set_title("Label")
-    axes[0].grid(False)
-    axes[0].axis('off')
-    axes[0].imshow(chip[1], cmap='gray')
-    axes[0].imshow(label, cmap="cool", alpha=1)
+    axes[fc_index].set_title("False colors")
+    axes[fc_index].grid(False)
+    axes[fc_index].axis('off')
+    axes[fc_index].imshow(chip_to_show)
+    
+    axes[label_index].set_title("Label")
+    axes[label_index].grid(False)
+    axes[label_index].axis('off')
+    axes[label_index].imshow(chip[1], cmap='gray')
+    axes[label_index].imshow(label, cmap="cool", alpha=1)
 
-    axes[1].set_title("Prediction")
-    axes[1].grid(False)
-    axes[1].axis('off')
-    axes[1].imshow(chip[1], cmap='gray')
-    axes[1].imshow(pred, cmap="cool", alpha=0.5)
+    axes[pred_index].set_title("Prediction")
+    axes[pred_index].grid(False)
+    axes[pred_index].axis('off')
+    axes[pred_index].imshow(chip[1], cmap='gray')
+    axes[pred_index].imshow(pred, cmap="cool", alpha=1)
     
     # TODO: show intersection and union pixels
     # axes[2].set_title("IoU")
