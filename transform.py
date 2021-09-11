@@ -8,11 +8,11 @@ def get_train_transform(crop_size):
         # A.RandomBrightness(limit=0.3, p=0.5),
         # A.RandomBrightness(limit=(1,1), p=0.5)
 
-        A.RandomBrightnessContrast(
-            brightness_limit=0.3,
-            contrast_limit=0.3,
-            p=0.7
-        ),
+        # A.RandomBrightnessContrast(
+        #     brightness_limit=0.3,
+        #     contrast_limit=0.3,
+        #     p=0.7
+        # ),
 
         # A.OpticalDistortion(
         #     distort_limit=(0,1),

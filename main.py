@@ -126,7 +126,8 @@ def get_paths_by_chip(image_level_df):
         paths.append([chip, vv_path, vh_path, flood_id])
     return pd.DataFrame(paths, columns=["chip_id", "vv_path", "vh_path", "flood_id"])
 
-def get_data_by_flood_id(path_to_data, flood_id):
+
+def get_train_metadata(path_to_data):
     train_metadata = pd.read_csv(
         os.path.join(path_to_data, 'flood-training-metadata.csv'),
         parse_dates=["scene_start"]
@@ -144,49 +145,18 @@ def get_data_by_flood_id(path_to_data, flood_id):
         / train_metadata.chip_id.path.with_suffix(".tif").path
     )
 
-    data = train_metadata[train_metadata.flood_id==flood_id]
-
-    x = get_paths_by_chip(data)
-    y = data[["chip_id", "label_path"]].drop_duplicates().reset_index(drop=True)
-
-    print(f'[data] Dataset size: {len(x)}')
-
-    return x, y
+    return train_metadata
 
 
-def prepare_data(
-    path_to_data,
+def get_train_path_metadata(
+    train_metadata,
+    flood_ids,
     reduce_train,
     train_number,
     valid_number
-    ):
-
-    train_metadata = pd.read_csv(
-        os.path.join(path_to_data, 'flood-training-metadata.csv'),
-        parse_dates=["scene_start"]
-    )
-
-    DATA_PATH = Path(path_to_data)
-
-    train_metadata["feature_path"] = (
-        str(DATA_PATH / "train_features")
-        / train_metadata.image_id.path.with_suffix(".tif").path
-    )
-
-    train_metadata["label_path"] = (
-        str(DATA_PATH / "train_labels")
-        / train_metadata.chip_id.path.with_suffix(".tif").path
-    )
-
-    # flood_ids = train_metadata.flood_id.unique().tolist()
-    # val_flood_ids = random.sample(flood_ids, 3)
-    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
-    val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
-    # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
-    print(f'[data] flood_ids: {val_flood_ids}')
-
-    valid_df = train_metadata[train_metadata.flood_id.isin(val_flood_ids)]
-    train_df = train_metadata[~train_metadata.flood_id.isin(val_flood_ids)]
+):
+    valid_df = train_metadata[train_metadata.flood_id.isin(flood_ids)]
+    train_df = train_metadata[~train_metadata.flood_id.isin(flood_ids)]
 
     # Separate features from labels
     val_x = get_paths_by_chip(valid_df)
@@ -209,15 +179,44 @@ def prepare_data(
     return train_x, train_y, val_x, val_y
 
 
-def get_dataset(
+def get_data_by_flood_id(path_to_data, flood_id):
+    train_metadata = get_train_metadata(path_to_data)
+
+    data = train_metadata[train_metadata.flood_id==flood_id]
+
+    x = get_paths_by_chip(data)
+    y = data[["chip_id", "label_path"]].drop_duplicates().reset_index(drop=True)
+
+    print(f'[data] Dataset size: {len(x)}')
+
+    return x, y
+
+
+def prepare_data(
     path_to_data,
     reduce_train,
     train_number,
     valid_number
     ):
 
-    train_x, train_y, val_x, val_y = prepare_data(path_to_data, reduce_train, train_number, valid_number)  
+    train_metadata = get_train_metadata(path_to_data)
 
+    # flood_ids = train_metadata.flood_id.unique().tolist()
+    # val_flood_ids = random.sample(flood_ids, 3)
+    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
+    # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
+    print(f'[data] flood_ids: {val_flood_ids}')
+
+    return get_train_path_metadata(
+        train_metadata,
+        val_flood_ids,
+        reduce_train,
+        train_number,
+        valid_number
+    )
+
+def get_datasets(train_x, train_y, val_x, val_y):
     # TODO: play with it!
     crop_size = 256
     train_transform = get_train_transform(crop_size)
@@ -230,6 +229,22 @@ def get_dataset(
     valid_dataset = FloodDataset(val_x, val_y, transforms=None)
 
     return train_dataset, valid_dataset
+
+def get_dataset(
+    path_to_data,
+    reduce_train,
+    train_number,
+    valid_number
+    ):
+
+    train_x, train_y, val_x, val_y = prepare_data(path_to_data, reduce_train, train_number, valid_number)
+    return get_datasets(train_x, train_y, val_x, val_y)
+
+def get_loss():
+    loss = nn.CrossEntropyLoss(ignore_index=255)
+    # loss = XEDiceLoss(dice_ratio=0)
+    return loss
+
 
 #
 # run
@@ -282,8 +297,7 @@ def run(
     num_epoch = max_iter / len(train_loader)
     print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
 
-    loss = nn.CrossEntropyLoss(ignore_index=255)
-    # loss = XEDiceLoss(dice_ratio=0)
+    loss = get_loss()
 
     optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
 
@@ -306,7 +320,123 @@ def run(
         # print_every=2
     )
 
-    train_info['valid_loader'] = valid_loader
-    train_info['valid_dataset'] = valid_dataset
-
     return train_info
+
+#
+# CV
+#
+
+import numpy as np
+from model import get_model
+
+from utils import format_time
+import time
+
+def run_cv(
+    device,
+
+    path_to_data='./',
+    reduce_train=False,
+    train_number=0,
+    valid_number=0,
+
+    batch_size_train=32,
+    batch_size_valid=32,
+    max_iter=100,
+    unfreeze_iter=0,
+    valid_iters=[],
+
+    optimizer_name='Adam',
+    learning_rate=3e-4,
+    weight_decay=1e-3,
+
+    scheduler_params=None,
+
+    encoder_name='resnet18',
+    save_model=False,
+    model_save_name='model',
+    
+    verbose=True
+):
+    t0 = time.time()
+    print('[run_cv]')
+
+    seed = 2021
+    seed_everything(seed)
+
+    train_metadata = get_train_metadata(path_to_data)
+
+    flood_ids = train_metadata.flood_id.unique().tolist()
+    flood_ids = random.sample(flood_ids, len(flood_ids))
+
+    folds = [
+        flood_ids[:3],
+        flood_ids[3:6],
+        flood_ids[6:9],
+        flood_ids[9:],    
+    ]
+
+    train_infos = []
+
+    for i, fold in enumerate(folds):
+        print('')
+        print(f'[data] fold: {i}, flood_ids: {fold}')
+
+        train_x, train_y, val_x, val_y = get_train_path_metadata(
+            train_metadata,
+            fold,
+            reduce_train,
+            train_number,
+            valid_number
+        )
+
+        train_dataset, valid_dataset = get_datasets(train_x, train_y, val_x, val_y)
+
+        train_loader = DataLoader(train_dataset, batch_size=batch_size_train, shuffle=True)
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=False)
+
+        print(f'[data] DataLoader size, train: {len(train_loader)}, valid: {len(valid_loader)}')
+
+        num_train_samples = batch_size_train * max_iter
+        num_epoch = max_iter / len(train_loader)
+        print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
+
+        loss = get_loss()
+
+        model = get_model(encoder_name)
+
+        optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
+
+        scheduler = get_scheduler(optimizer, max_iter, scheduler_params)
+
+        train_info = train_model(
+            fold=i,
+            model=model,
+            device=device,
+            data_loader=train_loader,
+            valid_loader=valid_loader,
+            criterion=loss,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            max_iter=max_iter,
+            unfreeze_iter=unfreeze_iter,
+            valid_iters=valid_iters,
+            save_model=save_model,
+            model_save_name=model_save_name,
+            verbose=valid_iters,
+            # print_every=2
+        )
+
+        train_infos.append(train_info)
+
+    cv_scores = np.array([i['best_score'] for i in train_infos])
+
+    print('')
+    print(f'[run_cv] results: {cv_scores}')
+    print(f'[run_cv] mean: {cv_scores.mean()}, std: {cv_scores.std()}')
+    print(f'[run_cv] finished for: {format_time(time.time() - t0)}')
+
+    return train_infos
+
+
+        

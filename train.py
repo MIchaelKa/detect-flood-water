@@ -73,6 +73,7 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
     return loss_meter, score_meter, outputs
 
 def train_model(
+    fold,
     model,
     device,
     data_loader,
@@ -204,7 +205,7 @@ def train_model(
 
                 if save_model:
                     # torch.save(model.state_dict(), f'pth/{model_save_name}_{iter_num}.pth')
-                    torch.save(model.state_dict(), f'pth/{model_save_name}.pth')
+                    torch.save(model.state_dict(), f'pth/{model_save_name}_fold_{fold}.pth')
                     
             # TODO: move out and see performance and time
             model.train()

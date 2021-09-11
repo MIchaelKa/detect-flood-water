@@ -111,6 +111,7 @@ class IoUMeter(BaseMeter):
     def compute_score_by_flood_id(self):
         scores = {}
         for key in self.intersection_by_flood_id.keys():
-            scores[key] = self.intersection_by_flood_id[key] / self.union_by_flood_id[key]
+            iou = self.intersection_by_flood_id[key] / self.union_by_flood_id[key]
+            scores[key] = iou.item()
         return scores
 
