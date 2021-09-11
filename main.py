@@ -376,6 +376,9 @@ def run_cv(
         flood_ids[9:],    
     ]
 
+    for f in folds:
+        print(f)
+
     train_infos = []
 
     for i, fold in enumerate(folds):
@@ -403,7 +406,7 @@ def run_cv(
 
         loss = get_loss()
 
-        model = get_model(encoder_name)
+        model = get_model(encoder_name).to(device)
 
         optimizer = get_optimizer(optimizer_name, model.parameters(), learning_rate, weight_decay)
 
