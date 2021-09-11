@@ -288,7 +288,12 @@ def run(
     # pin_memory=True,
     # batch_size_train
     # batch_size_valid
-    train_loader = DataLoader(train_dataset, batch_size=batch_size_train, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size_train,
+        shuffle=True,
+        drop_last=True # TODO: bug with deeplab when batch = 1
+    )
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=False)
 
     print(f'[data] DataLoader size, train: {len(train_loader)}, valid: {len(valid_loader)}')
@@ -318,7 +323,7 @@ def run(
         save_model=save_model,
         model_save_name=model_save_name,
         verbose=valid_iters,
-        # print_every=2
+        print_every=0
     )
 
     return train_info

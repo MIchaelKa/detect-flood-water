@@ -162,12 +162,12 @@ def train_model(
         # Scheduler update
         scheduler.step()           
 
-        # if verbose and iter_num % print_every == 0:
-        #     t_loss_avg = train_loss_meter.compute_average()
-        #     t_score = train_score_meter.compute_score()
+        if verbose and print_every > 0 and iter_num % print_every == 0:
+            t_loss_avg = train_loss_meter.compute_average()
+            t_score = train_score_meter.compute_score()
 
-        #     print('[train] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
-        #         .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
+            print('[train] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
+                .format(iter_num, t_loss_avg, t_score, format_time(time.time() - t0)))
 
         if iter_num == unfreeze_iter and unfreeze_iter > 0:
             print('[train] unfreeze encoder.')
