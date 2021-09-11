@@ -203,8 +203,8 @@ def prepare_data(
 
     # flood_ids = train_metadata.flood_id.unique().tolist()
     # val_flood_ids = random.sample(flood_ids, 3)
-    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
-    val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
+    val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    # val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
     # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
     print(f'[data] flood_ids: {val_flood_ids}')
 
@@ -304,6 +304,7 @@ def run(
     scheduler = get_scheduler(optimizer, max_iter, scheduler_params)
 
     train_info = train_model(
+        fold=0,
         model=model,
         device=device,
         data_loader=train_loader,
