@@ -32,8 +32,10 @@ def get_model():
         classes=2,
     )
 
-    model.load_state_dict(torch.load(ASSETS_DIRECTORY / "unet_timm-efficientnet-b0_11.09_fold_2.pth"))
-    # model.load_state_dict(torch.load(ASSETS_DIRECTORY / "unet_timm-efficientnet-b0_11.09_fold_2.pth", map_location='cpu'))
+    model_name = 'unet_timm-efficientnet-b0_12.09_fold_2.pth'
+
+    model.load_state_dict(torch.load(ASSETS_DIRECTORY / model_name))
+    # model.load_state_dict(torch.load(ASSETS_DIRECTORY / model_name, map_location='cpu'))
     model.eval()
 
     return model
