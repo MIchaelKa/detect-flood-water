@@ -201,11 +201,17 @@ def prepare_data(
 
     train_metadata = get_train_metadata(path_to_data)
 
+    # exclude_flood_ids = ['hxu', 'coz']
+    # exclude_flood_ids = ['coz']
+    # train_metadata = train_metadata[~train_metadata.flood_id.isin(exclude_flood_ids)]
+    # print(f'[data] exclude_flood_ids: {exclude_flood_ids}')
+
     # flood_ids = train_metadata.flood_id.unique().tolist()
     # val_flood_ids = random.sample(flood_ids, 3)
-    val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
     # val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
     # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
+    val_flood_ids = ['qxb', 'pxs'] # V4
     print(f'[data] flood_ids: {val_flood_ids}')
 
     return get_train_path_metadata(
@@ -240,9 +246,9 @@ def get_dataset(
     train_x, train_y, val_x, val_y = prepare_data(path_to_data, reduce_train, train_number, valid_number)
     return get_datasets(train_x, train_y, val_x, val_y)
 
-def get_loss():
-    loss = nn.CrossEntropyLoss(ignore_index=255)
-    # loss = XEDiceLoss(dice_ratio=0)
+def get_loss(dice_ratio):
+    # loss = nn.CrossEntropyLoss(ignore_index=255)
+    loss = XEDiceLoss(dice_ratio)
     return loss
 
 
@@ -268,6 +274,7 @@ def run(
     optimizer_name='Adam',
     learning_rate=3e-4,
     weight_decay=1e-3,
+    dice_ratio=0,
 
     scheduler_params=None,
 
@@ -292,7 +299,7 @@ def run(
         train_dataset,
         batch_size=batch_size_train,
         shuffle=True,
-        drop_last=True # TODO: bug with deeplab when batch = 1
+        # drop_last=True # TODO: bug with deeplab when batch = 1
     )
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=False)
 
@@ -355,6 +362,7 @@ def run_cv(
     optimizer_name='Adam',
     learning_rate=3e-4,
     weight_decay=1e-3,
+    dice_ratio=0,
 
     scheduler_params=None,
 
@@ -410,7 +418,7 @@ def run_cv(
         num_epoch = max_iter / len(train_loader)
         print(f'[data] num_epoch: {num_epoch}, num_train_samples: {num_train_samples}')
 
-        loss = get_loss()
+        loss = get_loss(dice_ratio)
 
         model = get_model(encoder_name).to(device)
 
@@ -433,7 +441,7 @@ def run_cv(
             save_model=save_model,
             model_save_name=model_save_name,
             verbose=valid_iters,
-            # print_every=2
+            print_every=0
         )
 
         train_infos.append(train_info)
