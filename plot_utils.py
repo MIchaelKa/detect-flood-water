@@ -206,7 +206,7 @@ def show_dataset(dataset, start_index, count, show_mask=True, show_hist=False):
         
         if show_hist:
             plt.subplot(rows,count,count+i+1)
-            plt.hist(chip.reshape(-1), bins=50)
+            plt.hist(chip[1].reshape(-1), bins=50)
 
 def show_predictions(chip_to_show, chip, label, pred):    
     _, axes = plt.subplots(1, 3, figsize=(15,5))

@@ -1,8 +1,8 @@
 import segmentation_models_pytorch as smp
 
-encoder_weights = 'imagenet'
-
 def get_model(encoder_name):
+
+    encoder_weights = 'imagenet' # None, imagenet
 
     model = smp.Unet(
         encoder_name=encoder_name,

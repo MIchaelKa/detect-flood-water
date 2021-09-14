@@ -103,16 +103,14 @@ def get_loss(dice_ratio):
     # loss = XEDiceLoss(dice_ratio)
     return loss
 
-def get_model_parameters(model):
-    encoder_lr = 3e-5
-    decoder_lr = 3e-4
+def get_model_parameters(model, encoder_lr, decoder_lr):
+    parameters = [
+        {'params': model.encoder.parameters(), 'lr': encoder_lr},
+        {'params': model.decoder.parameters(), 'lr': decoder_lr},
+        {'params': model.segmentation_head.parameters(), 'lr': decoder_lr},
+    ]
 
-    # parameters = [
-    #     {'params': model.encoder.parameters(), 'lr': encoder_lr},
-    #     {'params': model.decoder.parameters(), 'lr': decoder_lr}
-    # ]
-
-    parameters = model.parameters()
+    # parameters = model.parameters()
 
     return parameters
 
@@ -175,7 +173,11 @@ def run(
 
     loss = get_loss(dice_ratio)
 
-    optimizer = get_optimizer(optimizer_name, get_model_parameters(model), learning_rate, weight_decay)
+    # encoder_lr, decoder_lr = learning_rate[0], learning_rate[1]
+    encoder_lr, decoder_lr = learning_rate, learning_rate
+    parameters = get_model_parameters(model, encoder_lr, decoder_lr)
+
+    optimizer = get_optimizer(optimizer_name, parameters, decoder_lr, weight_decay)
 
     scheduler = get_scheduler(optimizer, max_iter, scheduler_params)
 

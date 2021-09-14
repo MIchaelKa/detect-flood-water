@@ -122,17 +122,57 @@ def prepare_data(
         valid_number
     )
 
+#
+# preprocessing
+#
+
+import albumentations as A
+from segmentation_models_pytorch.encoders import get_preprocessing_params
+import functools
+import numpy as np
+
+def preprocess_input(x, mean=None, std=None, **kwargs):
+
+    if mean is not None:
+        mean = np.array(mean)
+        x = x - mean
+
+    if std is not None:
+        std = np.array(std)
+        x = x / std
+
+    return x
+
+def get_preprocessing_fn(encoder_name, pretrained="imagenet"):
+    params = get_preprocessing_params(encoder_name, pretrained=pretrained)
+
+    print('\n[data] preprocessing:')
+    print(params)
+    print('')
+
+    params['mean'] = params['mean'][:2]
+    params['std'] = params['std'][:2]
+    return functools.partial(preprocess_input, **params)
+
+#
+# get_dataset
+#
+
 def get_datasets(train_x, train_y, val_x, val_y):
     # TODO: play with it!
     crop_size = 256
     train_transform = get_train_transform(crop_size)
   
-    # print('\n[data] train_transform:')
-    # print(train_transform)
-    # print('')
+    print('\n[data] train_transform:')
+    print(train_transform)
+    print('')
 
-    train_dataset = FloodDataset(train_x, train_y, transforms=train_transform)
-    valid_dataset = FloodDataset(val_x, val_y, transforms=None)
+    encoder_name = 'timm-efficientnet-b0'
+    preprocess_input = get_preprocessing_fn(encoder_name, pretrained='imagenet')
+    preprocessing = A.Lambda(image=preprocess_input)
+
+    train_dataset = FloodDataset(train_x, train_y, transforms=train_transform, preprocessing=preprocessing)
+    valid_dataset = FloodDataset(val_x, val_y, transforms=None, preprocessing=preprocessing)
 
     return train_dataset, valid_dataset
 
