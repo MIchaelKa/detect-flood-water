@@ -12,11 +12,11 @@ def get_train_transform(crop_size):
 
         A.RandomCrop(crop_size, crop_size),
 
-        A.RandomRotate90(),
-        A.HorizontalFlip(),
-        A.VerticalFlip(),
+        # A.RandomRotate90(),
+        # A.HorizontalFlip(),
+        # A.VerticalFlip(),
 
-        # A.ChannelShuffle(),
+        A.ChannelShuffle(),
 
         # InvertScaledImg(p=0.2)
 

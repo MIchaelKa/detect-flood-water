@@ -167,9 +167,11 @@ def get_datasets(train_x, train_y, val_x, val_y):
     print(train_transform)
     print('')
 
-    encoder_name = 'timm-efficientnet-b0'
-    preprocess_input = get_preprocessing_fn(encoder_name, pretrained='imagenet')
-    preprocessing = A.Lambda(image=preprocess_input)
+    # encoder_name = 'timm-efficientnet-b0'
+    # preprocess_input = get_preprocessing_fn(encoder_name, pretrained='imagenet')
+    # preprocessing = A.Lambda(image=preprocess_input)
+
+    preprocessing = None
 
     train_dataset = FloodDataset(train_x, train_y, transforms=train_transform, preprocessing=preprocessing)
     valid_dataset = FloodDataset(val_x, val_y, transforms=None, preprocessing=preprocessing)
