@@ -102,16 +102,26 @@ def prepare_data(
     train_metadata = get_train_metadata(path_to_data)
 
     # exclude_flood_ids = ['hxu', 'coz']
+    # exclude_flood_ids = ['awc', 'ayt', 'coz', 'hbe', 'hxu', 'jja', 'kuo', 'pxs', 'qus', 'qxb', 'tht', 'tnp', 'wvy']
     # exclude_flood_ids = ['coz']
     # train_metadata = train_metadata[~train_metadata.flood_id.isin(exclude_flood_ids)]
     # print(f'[data] exclude_flood_ids: {exclude_flood_ids}')
 
+    # include_flood_ids = ['hxu', 'coz', 'awc']
+    # train_metadata = train_metadata[train_metadata.flood_id.isin(include_flood_ids)]
+    # print(f'[data] include_flood_ids: {include_flood_ids}')
+
     # flood_ids = train_metadata.flood_id.unique().tolist()
     # val_flood_ids = random.sample(flood_ids, 3)
-    val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
     # val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
     # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
     # val_flood_ids = ['qxb', 'pxs'] # V4
+    val_flood_ids = ['coz', 'hxu', 'pxs'] # V5
+
+    # val_flood_ids = ['coz'] # V6
+
+
     print(f'[data] flood_ids: {val_flood_ids}')
 
     return get_train_path_metadata(

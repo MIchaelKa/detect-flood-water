@@ -27,7 +27,9 @@ class FloodDataset(Dataset):
             # vv_mask = vv.read(1, masked=True)
         with rasterio.open(img.vh_path) as vh:
             vh_path = vh.read(1)
-        x_arr = np.stack([vv_path, vh_path], axis=-1)
+
+        # TODO: think about A.ChannelShuffle when you add 3rd channel
+        x_arr = np.stack([vv_path, vh_path, vh_path], axis=-1)
         # vv_mask = (1 - vv_mask.mask)
 
         # Min-max normalization
@@ -56,6 +58,7 @@ class FloodDataset(Dataset):
 
 
         x_arr = np.transpose(x_arr, [2, 0, 1])
+        x_arr = x_arr[:2,:,:]
         sample = {
             "chip_id": img.chip_id,
             "chip": x_arr,

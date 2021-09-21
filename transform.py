@@ -16,17 +16,26 @@ def get_train_transform(crop_size):
         # A.HorizontalFlip(),
         # A.VerticalFlip(),
 
-        A.ChannelShuffle(),
+        # A.ChannelShuffle(),
 
-        # InvertScaledImg(p=0.2)
+        # A.ColorJitter(),
+
+        # A.RGBShift(
+        #     r_shift_limit=0.4,
+        #     g_shift_limit=0.4,
+        #     b_shift_limit=0.4,
+        #     p=0.5
+        # ),
+
+        # InvertScaledImg(p=0.2),
 
         # A.RandomBrightness(limit=0.3, p=0.5),
         # A.RandomBrightness(limit=(1,1), p=0.5)
 
         # A.RandomBrightnessContrast(
-        #     brightness_limit=0.3,
-        #     contrast_limit=0.3,
-        #     p=0.7
+        #     brightness_limit=0.2,
+        #     contrast_limit=0.2,
+        #     p=0.5
         # ),
 
         # A.OpticalDistortion(
