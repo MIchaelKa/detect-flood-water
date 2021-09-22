@@ -20,6 +20,9 @@ def scale_img(matrix):
     min_values = np.array([-23, -28, 0.2])
     max_values = np.array([0, -5, 1])
 
+    # min_values = np.array([-28, -23, 1/0.2])
+    # max_values = np.array([-5, 0, 1])
+
     # Reshape matrix
     w, h, d = matrix.shape
     matrix = np.reshape(matrix, [w * h, d]).astype(np.float64)
@@ -117,7 +120,8 @@ def get_chip_by_id(chip_id, data):
     with rasterio.open(row.vh_path) as vh:
         vh_img = vh.read(1)
 
-    s1_img = create_false_color_composite(vv_img, vh_img)  
+    s1_img = create_false_color_composite(vv_img, vh_img)
+    # s1_img = create_false_color_composite(vh_img, vv_img)
     return s1_img
 
 def show_chip_by_id(chip_id, data):
@@ -295,3 +299,22 @@ def show_valid_score_by_flood(train_info):
     for i, flood_id in enumerate(flood_ids):
         axes[i].set_title(flood_id)
         axes[i].plot(valid_iters, valid_score_by_flood_id[flood_id], '-o')
+
+
+#
+# other
+#
+
+def create_fcc_dataset_sample(s1_img):
+    s1_img = np.transpose(s1_img, [1, 2, 0])
+    
+    img = np.zeros((512, 512, 3), dtype=np.float32)
+    img[:, :, :2] = s1_img.copy()
+    
+    b_channel = s1_img[:, :, 0] / s1_img[:, :, 1]
+    bc_max = b_channel.max()
+    bc_min = b_channel.min()
+    b_channel = (b_channel - bc_min) / (bc_max - bc_min)       
+    img[:, :, 2] = b_channel
+
+    return img

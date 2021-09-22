@@ -30,6 +30,8 @@ class FloodDataset(Dataset):
 
         # TODO: think about A.ChannelShuffle when you add 3rd channel
         x_arr = np.stack([vv_path, vh_path, vh_path], axis=-1)
+        # x_arr = np.stack([vv_path, vh_path], axis=-1)
+   
         # vv_mask = (1 - vv_mask.mask)
 
         # Min-max normalization

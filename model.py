@@ -1,4 +1,5 @@
 import segmentation_models_pytorch as smp
+import ttach as tta
 
 def get_model(encoder_name):
 
@@ -33,3 +34,37 @@ def get_model(encoder_name):
     # )
     
     return model
+
+#
+# TTA
+#
+
+def channel_shuffle(img):
+    img = img[:,(1,0),...]
+    return img
+
+class TTAChannelShuffle(tta.base.ImageOnlyTransform):
+    """Rearrange channels of the input image"""
+
+    identity_param = False
+
+    def __init__(self):
+        super().__init__("apply", [False, True])
+
+    def apply_aug_image(self, image, apply=False, **kwargs):
+#         print(f'shape 1: {image.shape}')
+        if apply:
+            image = channel_shuffle(image)
+#         print(f'shape 2: {image.shape}')
+        return image
+
+def get_model_tta(model):
+    transforms = tta.Compose([
+            # tta.Scale(scales=[1, 2]),
+            tta.Multiply(factors=[0.9, 1.1]),
+            TTAChannelShuffle()
+        ]
+    )
+    tta_model = tta.SegmentationTTAWrapper(model, transforms, merge_mode='mean')
+
+    return tta_model
