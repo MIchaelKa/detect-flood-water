@@ -119,7 +119,6 @@ def get_model_parameters(model, encoder_lr, decoder_lr):
 #
 
 def run(
-    model,
     device,
 
     path_to_data='./',
@@ -133,6 +132,9 @@ def run(
     unfreeze_iter=0,
     valid_iters=[],
 
+    preprocess_input=False,
+    crop_size=256,
+
     optimizer_name='Adam',
     learning_rate=3e-4,
     weight_decay=1e-3,
@@ -140,6 +142,7 @@ def run(
 
     scheduler_params=None,
 
+    encoder_name='resnet18',
     save_model=False,
     model_save_name='model',
     
@@ -148,8 +151,13 @@ def run(
 
     print('[run]')
 
+    seed = 2021
+    seed_everything(seed)
+
+    model = get_model(encoder_name).to(device)
+
     train_dataset, valid_dataset = get_dataset(
-        path_to_data, reduce_train, train_number, valid_number
+        path_to_data, reduce_train, train_number, valid_number, crop_size, encoder_name, preprocess_input
     )
 
     # TODO: setup

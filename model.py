@@ -61,7 +61,7 @@ class TTAChannelShuffle(tta.base.ImageOnlyTransform):
 def get_model_tta(model):
     transforms = tta.Compose([
             # tta.Scale(scales=[1, 2]),
-            tta.Multiply(factors=[0.9, 1.1]),
+            # tta.Multiply(factors=[0.9, 1.1]),
             TTAChannelShuffle()
         ]
     )

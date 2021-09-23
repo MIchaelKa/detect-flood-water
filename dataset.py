@@ -29,16 +29,22 @@ class FloodDataset(Dataset):
             vh_path = vh.read(1)
 
         # TODO: think about A.ChannelShuffle when you add 3rd channel
-        x_arr = np.stack([vv_path, vh_path, vh_path], axis=-1)
-        # x_arr = np.stack([vv_path, vh_path], axis=-1)
+        # x_arr = np.stack([vv_path, vh_path, vh_path], axis=-1)
+        x_arr = np.stack([vv_path, vh_path], axis=-1)
    
         # vv_mask = (1 - vv_mask.mask)
 
         # Min-max normalization
-        min_norm = -77
-        max_norm = 26
-        x_arr = np.clip(x_arr, min_norm, max_norm)
-        x_arr = (x_arr - min_norm) / (max_norm - min_norm)
+        # min_norm = -77
+        # max_norm = 26
+        # x_arr = np.clip(x_arr, min_norm, max_norm)
+        # x_arr = (x_arr - min_norm) / (max_norm - min_norm)
+
+        # Min-max normalization 2
+        x_arr_max = np.max(x_arr, axis=(0,1))
+        x_arr_min = np.min(x_arr, axis=(0,1))
+
+        x_arr = (x_arr - x_arr_min) / (x_arr_max - x_arr_min)
 
         # Load label if available - training only
         if self.label is not None:
@@ -60,7 +66,9 @@ class FloodDataset(Dataset):
 
 
         x_arr = np.transpose(x_arr, [2, 0, 1])
-        x_arr = x_arr[:2,:,:]
+
+        # x_arr = x_arr[:2,:,:]
+
         sample = {
             "chip_id": img.chip_id,
             "chip": x_arr,

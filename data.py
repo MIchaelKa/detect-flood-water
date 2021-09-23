@@ -79,10 +79,11 @@ def get_train_path_metadata(
     return train_x, train_y, val_x, val_y
 
 
-def get_data_by_flood_id(path_to_data, flood_id):
+def get_data_by_flood_id(path_to_data, flood_ids):
     train_metadata = get_train_metadata(path_to_data)
 
-    data = train_metadata[train_metadata.flood_id==flood_id]
+    # data = train_metadata[train_metadata.flood_id==flood_id]
+    data = train_metadata[train_metadata.flood_id.isin(flood_ids)]
 
     x = get_paths_by_chip(data)
     y = data[["chip_id", "label_path"]].drop_duplicates().reset_index(drop=True)
@@ -117,9 +118,10 @@ def prepare_data(
     # val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
     # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
     # val_flood_ids = ['qxb', 'pxs'] # V4
-    val_flood_ids = ['coz', 'hxu', 'pxs'] # V5
+    # val_flood_ids = ['coz', 'hxu', 'pxs'] # V5
+    # val_flood_ids = ['coz', 'hxu'] # V6
 
-    # val_flood_ids = ['coz'] # V6
+    val_flood_ids = ['coz'] # V6
 
 
     print(f'[data] flood_ids: {val_flood_ids}')
@@ -168,20 +170,26 @@ def get_preprocessing_fn(encoder_name, pretrained="imagenet"):
 # get_dataset
 #
 
-def get_datasets(train_x, train_y, val_x, val_y):
-    # TODO: play with it!
-    crop_size = 256
+def get_datasets(
+    train_x,
+    train_y,
+    val_x,
+    val_y,
+    crop_size,
+    encoder_name,
+    preprocess_input):
+    
     train_transform = get_train_transform(crop_size)
   
     print('\n[data] train_transform:')
     print(train_transform)
     print('')
 
-    # encoder_name = 'timm-efficientnet-b0'
-    # preprocess_input = get_preprocessing_fn(encoder_name, pretrained='imagenet')
-    # preprocessing = A.Lambda(image=preprocess_input)
-
-    preprocessing = None
+    if preprocess_input:
+        preprocessing_fn = get_preprocessing_fn(encoder_name, pretrained='imagenet')
+        preprocessing = A.Lambda(image=preprocessing_fn)
+    else:
+        preprocessing = None
 
     train_dataset = FloodDataset(train_x, train_y, transforms=train_transform, preprocessing=preprocessing)
     valid_dataset = FloodDataset(val_x, val_y, transforms=None, preprocessing=preprocessing)
@@ -192,8 +200,11 @@ def get_dataset(
     path_to_data,
     reduce_train,
     train_number,
-    valid_number
+    valid_number,
+    crop_size,
+    encoder_name,
+    preprocess_input
     ):
 
     train_x, train_y, val_x, val_y = prepare_data(path_to_data, reduce_train, train_number, valid_number)
-    return get_datasets(train_x, train_y, val_x, val_y)
+    return get_datasets(train_x, train_y, val_x, val_y, crop_size, encoder_name, preprocess_input)

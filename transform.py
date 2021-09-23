@@ -12,6 +12,13 @@ def get_train_transform(crop_size):
 
         A.RandomCrop(crop_size, crop_size),
 
+        # A.HueSaturationValue(
+        #     hue_shift_limit=0,
+        #     sat_shift_limit=0.3,
+        #     val_shift_limit=0.3,
+        #     p=0.5
+        # )
+
         # A.RandomRotate90(),
         # A.HorizontalFlip(),
         # A.VerticalFlip(),

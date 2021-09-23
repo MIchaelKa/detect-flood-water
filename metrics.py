@@ -64,6 +64,7 @@ class IoUMeter(BaseMeter):
         super().reset()
         self.intersection = 0
         self.union = 0
+        self.label = 0
 
         self.intersection_by_flood_id = {}
         self.union_by_flood_id = {}
@@ -74,15 +75,21 @@ class IoUMeter(BaseMeter):
         self.intersection += intersection
         self.union += union
 
+        label = target.sum()
+        self.label += label
+
         batch_iou = intersection / union
         self.history.append(batch_iou)
-        return batch_iou, intersection, union
+        return batch_iou, intersection, union, label
 
     def update_with_flood_id(self, preds, target, flood_id_batch):
         intersection, union = intersection_and_union(preds, target)
 
         self.intersection += intersection
         self.union += union
+
+        label = (target==1).sum().item()
+        self.label += label
 
         batch_iou = intersection / union
         self.history.append(batch_iou)

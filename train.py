@@ -13,10 +13,10 @@ def set_encoder_grad(model, requires_grad):
     for param in model.encoder.parameters():
         param.requires_grad = requires_grad
 
-def compute_prediction(output):
+def compute_prediction(output, threshold=0.5):
     preds = torch.softmax(output, dim=1)[:, 1]
     # preds *= mask
-    preds = (preds > 0.5) * 1
+    preds = (preds > threshold) * 1
     return preds
 
 def get_next_valid_iter(valid_iters):
@@ -25,7 +25,7 @@ def get_next_valid_iter(valid_iters):
     else:
         return -1
 
-def validate(model, device, valid_loader, criterion, verbose=True, print_every=10):
+def validate(model, device, valid_loader, criterion, threshold=0.5, verbose=True, print_every=10):
 
     t0 = time.time()
 
@@ -56,7 +56,7 @@ def validate(model, device, valid_loader, criterion, verbose=True, print_every=1
             loss_meter.update(loss_item)
 
             # Update score meter
-            preds = compute_prediction(output)
+            preds = compute_prediction(output, threshold=threshold)
             score_meter.update_with_flood_id(preds, y_batch, flood_id_batch)
 
             # Save outputs
@@ -176,7 +176,9 @@ def train_model(
         if iter_num == valid_iter_num:
             valid_iter_num = get_next_valid_iter(valid_iters_copy)
 
-            v_loss_meter, v_score_meter, outputs = validate(model, device, valid_loader, criterion, verbose=False, print_every=5)
+            v_loss_meter, v_score_meter, outputs = validate(
+                model, device, valid_loader, criterion,
+                threshold=0.5, verbose=False, print_every=5)
 
             # TODO: one more train meters to reset it here?
 
