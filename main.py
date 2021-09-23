@@ -104,13 +104,13 @@ def get_loss(dice_ratio):
     return loss
 
 def get_model_parameters(model, encoder_lr, decoder_lr):
-    parameters = [
-        {'params': model.encoder.parameters(), 'lr': encoder_lr},
-        {'params': model.decoder.parameters(), 'lr': decoder_lr},
-        {'params': model.segmentation_head.parameters(), 'lr': decoder_lr},
-    ]
+    # parameters = [
+    #     {'params': model.encoder.parameters(), 'lr': encoder_lr},
+    #     {'params': model.decoder.parameters(), 'lr': decoder_lr},
+    #     {'params': model.segmentation_head.parameters(), 'lr': decoder_lr},
+    # ]
 
-    # parameters = model.parameters()
+    parameters = model.parameters()
 
     return parameters
 
@@ -120,6 +120,7 @@ def get_model_parameters(model, encoder_lr, decoder_lr):
 
 def run(
     device,
+    model=None,
 
     path_to_data='./',
     reduce_train=False,
@@ -154,7 +155,9 @@ def run(
     seed = 2021
     seed_everything(seed)
 
-    model = get_model(encoder_name).to(device)
+    if model is None:
+        print('[run] get_model')
+        model = get_model(encoder_name).to(device)
 
     train_dataset, valid_dataset = get_dataset(
         path_to_data, reduce_train, train_number, valid_number, crop_size, encoder_name, preprocess_input
@@ -204,7 +207,7 @@ def run(
         save_model=save_model,
         model_save_name=model_save_name,
         verbose=valid_iters,
-        print_every=0
+        print_every=1
     )
 
     return train_info

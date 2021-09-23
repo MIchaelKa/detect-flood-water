@@ -177,7 +177,79 @@ def show_data_row(row):
     axes[3].grid(False)
     axes[3].axis('off')
 
-def show_dataset(dataset, start_index, count, show_mask=True, show_hist=False):
+#
+# aux
+#
+
+def show_aux_data_by_id(chip_id, data):
+    row = data[data.chip_id == chip_id].iloc[0]
+    show_aux_data(row)
+
+def show_aux_data_by_iloc(idx, data):
+    row = data.iloc[idx]
+    show_aux_data(row)
+
+def show_aux_data(row):
+    print(f'Flood: {row.flood_id}')
+    print(f'Chip: {row.chip_id}')
+
+    features = [
+        'vv',
+        'vh',
+        'nasadem',
+        'jrc-gsw-extent',
+        'jrc-gsw-occurrence',
+        'jrc-gsw-recurrence',
+        'jrc-gsw-seasonality',
+        'jrc-gsw-transitions',
+        'jrc-gsw-change',
+    ]
+
+    images = {}
+
+    for feature in features:
+        with rasterio.open(row[f'{feature}_path']) as f:
+            images[feature] = f.read(1)
+
+    with rasterio.open(row.label_path) as lp:
+        lp_img = lp.read(1)
+
+    vv_img, vh_img = images['vv'], images['vh']
+    
+    s1_img = create_false_color_composite(vv_img, vh_img)  
+    label_to_show = np.ma.masked_where((lp_img == 0) | (lp_img == 255), lp_img)
+    
+    label_sum = (1 - label_to_show.mask).sum()
+    print(f'Label: {label_sum}')
+
+    _, axes = plt.subplots(11, 2, figsize=(5*2,5*11))
+    
+    axes[0,0].imshow(s1_img)
+    axes[0,0].set_title("False colors", fontsize=14)
+    axes[0,0].grid(False)
+    axes[0,0].axis('off')
+    
+    axes[1,0].imshow(s1_img)
+    axes[1,0].imshow(label_to_show, cmap="cool", alpha=1)
+    axes[1,0].set_title("Label", fontsize=14)
+    axes[1,0].grid(False)
+    axes[1,0].axis('off')
+
+    for i, feature in enumerate(features):
+        axes[2+i,0].imshow(images[feature], cmap="gray")
+        axes[2+i,0].set_title(feature, fontsize=14)
+        axes[2+i,0].grid(False)
+        axes[2+i,0].axis('off')
+
+    for i, feature in enumerate(features):
+        axes[2+i,1].set_title(feature, fontsize=14)
+        axes[2+i,1].hist(images[feature].reshape(-1), bins=50)
+
+#
+# dataset
+#
+
+def show_dataset(dataset, start_index, count, feature_index=0, show_mask=True, show_hist=False):
     
     indices = np.arange(start_index, start_index+count)
     print(indices)
@@ -204,13 +276,13 @@ def show_dataset(dataset, start_index, count, show_mask=True, show_hist=False):
         label_sum = (1 - label_to_show.mask).sum()
         plt.title(f'Shape: {chip.shape}\nLabel: {label_sum}', fontsize=16)
       
-        plt.imshow(chip[1], cmap="gray")
+        plt.imshow(chip[feature_index], cmap="gray")
         if show_mask:
             plt.imshow(label_to_show, cmap="cool", alpha=0.5)
         
         if show_hist:
             plt.subplot(rows,count,count+i+1)
-            plt.hist(chip[1].reshape(-1), bins=50)
+            plt.hist(chip[feature_index].reshape(-1), bins=50)
 
 def show_predictions(chip_to_show, chip, label, pred):    
     _, axes = plt.subplots(1, 3, figsize=(15,5))

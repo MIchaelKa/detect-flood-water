@@ -8,7 +8,7 @@ def get_model(encoder_name):
     model = smp.Unet(
         encoder_name=encoder_name,
         encoder_weights=encoder_weights,
-        in_channels=2,
+        in_channels=4,
         classes=2,
     )
 

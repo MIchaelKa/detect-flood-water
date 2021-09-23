@@ -10,7 +10,8 @@ class FloodDataset(Dataset):
     label masks (where available).
     """
 
-    def __init__(self, x_paths, y_paths=None, transforms=None, preprocessing=None):
+    def __init__(self, features, x_paths, y_paths=None, transforms=None, preprocessing=None):
+        self.features = features
         self.data = x_paths
         self.label = y_paths
         self.transforms = transforms
@@ -20,27 +21,17 @@ class FloodDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # Loads a 2-channel image from a chip-level dataframe
+        
         img = self.data.loc[idx]
-        with rasterio.open(img.vv_path) as vv:
-            vv_path = vv.read(1)
-            # vv_mask = vv.read(1, masked=True)
-        with rasterio.open(img.vh_path) as vh:
-            vh_path = vh.read(1)
+        images = []
 
-        # TODO: think about A.ChannelShuffle when you add 3rd channel
-        # x_arr = np.stack([vv_path, vh_path, vh_path], axis=-1)
-        x_arr = np.stack([vv_path, vh_path], axis=-1)
-   
-        # vv_mask = (1 - vv_mask.mask)
+        for feature in self.features:
+            with rasterio.open(img[f'{feature}_path']) as f:
+                images.append(f.read(1))
+
+        x_arr = np.stack(images, axis=-1)
 
         # Min-max normalization
-        # min_norm = -77
-        # max_norm = 26
-        # x_arr = np.clip(x_arr, min_norm, max_norm)
-        # x_arr = (x_arr - min_norm) / (max_norm - min_norm)
-
-        # Min-max normalization 2
         x_arr_max = np.max(x_arr, axis=(0,1))
         x_arr_min = np.min(x_arr, axis=(0,1))
 
@@ -54,9 +45,6 @@ class FloodDataset(Dataset):
 
             # Apply data augmentations, if provided
             if self.transforms:
-                # t = self.transforms(image=x_arr, mask=y_arr, invalid_mask=vv_mask)
-                # x_arr, y_arr, vv_mask = t['image'], t['mask'], t['invalid_mask']
-
                 t = self.transforms(image=x_arr, mask=y_arr)
                 x_arr, y_arr = t['image'], t['mask']
 
@@ -67,13 +55,10 @@ class FloodDataset(Dataset):
 
         x_arr = np.transpose(x_arr, [2, 0, 1])
 
-        # x_arr = x_arr[:2,:,:]
-
         sample = {
             "chip_id": img.chip_id,
             "chip": x_arr,
             "label": y_arr,
-            # "mask": vv_mask,
             "flood_id": img.flood_id}
 
         return sample

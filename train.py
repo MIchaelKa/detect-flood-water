@@ -129,7 +129,7 @@ def train_model(
             data_dict = next(data_loader_iter)
 
         # TODO: Check if using a dictionary do not contribute to training time much
-        # id_batch = data_dict['chip_id']
+        id_batch = data_dict['chip_id']
         x_batch = data_dict['chip']
         y_batch = data_dict['label']
         # mask_batch = data_dict['mask']
@@ -138,6 +138,7 @@ def train_model(
         y_batch = y_batch.to(device, dtype=torch.long)
         # mask_batch = mask_batch.to(device)
 
+        # print(id_batch)
         # print(x_batch.shape)
 
         output = model(x_batch)
