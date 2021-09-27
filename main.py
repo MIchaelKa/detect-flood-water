@@ -99,8 +99,10 @@ def get_scheduler(optimizer, max_iter, scheduler_params):
     return scheduler
 
 def get_loss(dice_ratio):
-    loss = nn.CrossEntropyLoss(ignore_index=255)
-    # loss = XEDiceLoss(dice_ratio)
+    if dice_ratio==0:
+        loss = nn.CrossEntropyLoss(ignore_index=255)
+    else:
+        loss = XEDiceLoss(dice_ratio)
     return loss
 
 def get_model_parameters(model, encoder_lr, decoder_lr):
@@ -207,7 +209,7 @@ def run(
         save_model=save_model,
         model_save_name=model_save_name,
         verbose=valid_iters,
-        print_every=1
+        print_every=0
     )
 
     return train_info
@@ -236,6 +238,9 @@ def run_cv(
     unfreeze_iter=0,
     valid_iters=[],
 
+    preprocess_input=False,
+    crop_size=256,
+
     optimizer_name='Adam',
     learning_rate=3e-4,
     weight_decay=1e-3,
@@ -257,14 +262,22 @@ def run_cv(
 
     train_metadata = get_train_metadata(path_to_data)
 
-    flood_ids = train_metadata.flood_id.unique().tolist()
-    flood_ids = random.sample(flood_ids, len(flood_ids))
+    # flood_ids = train_metadata.flood_id.unique().tolist()
+    # flood_ids = random.sample(flood_ids, len(flood_ids))
+
+    # folds = [
+    #     flood_ids[:3],
+    #     flood_ids[3:6],
+    #     flood_ids[6:9],
+    #     flood_ids[9:],    
+    # ]
 
     folds = [
-        flood_ids[:3],
-        flood_ids[3:6],
-        flood_ids[6:9],
-        flood_ids[9:],    
+        ['kuo', 'tht', 'qus'],
+        ['hbe', 'awc'],
+        ['tnp', 'wvy', 'qxb'],
+        ['pxs', 'ayt', 'jja'],
+        ['hxu', 'coz']
     ]
 
     for f in folds:
@@ -284,7 +297,7 @@ def run_cv(
             valid_number
         )
 
-        train_dataset, valid_dataset = get_datasets(train_x, train_y, val_x, val_y)
+        train_dataset, valid_dataset = get_datasets(train_x, train_y, val_x, val_y, crop_size, encoder_name, preprocess_input)
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size_train, shuffle=True)
         valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=False)

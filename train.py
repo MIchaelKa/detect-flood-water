@@ -35,13 +35,22 @@ def validate(model, device, valid_loader, criterion, threshold=0.5, verbose=True
     score_meter = IoUMeter()
     outputs = []
 
+    chip_ids = []
+    flood_ids = []
+    val_losses = []
+
+
     with torch.no_grad():
         for iter_num, data_dict in enumerate(valid_loader):
 
             x_batch = data_dict['chip']
             y_batch = data_dict['label']
             # mask_batch = data_dict['mask']
+            id_batch = data_dict['chip_id']
             flood_id_batch = data_dict['flood_id']
+
+            chip_ids.append(id_batch)
+            flood_ids.append(flood_id_batch)
 
             x_batch = x_batch.to(device, dtype=torch.float32)
             y_batch = y_batch.to(device, dtype=torch.long)
@@ -50,9 +59,11 @@ def validate(model, device, valid_loader, criterion, threshold=0.5, verbose=True
             
             output = model(x_batch)
             loss = criterion(output, y_batch)
+
+            val_losses.append(loss.mean(axis=(1,2)).detach().cpu().numpy())
             
             # Update loss meter
-            loss_item = loss.item()
+            loss_item = loss.mean().item()
             loss_meter.update(loss_item)
 
             # Update score meter
@@ -70,7 +81,7 @@ def validate(model, device, valid_loader, criterion, threshold=0.5, verbose=True
                 print('[valid] iter: {:>4d}, loss = {:.5f}, score = {:.5f}, time: {}'
                     .format(iter_num, loss_avg, v_score, format_time(time.time() - t0)))
    
-    return loss_meter, score_meter, outputs
+    return loss_meter, score_meter, outputs, chip_ids, flood_ids, val_losses
 
 def train_model(
     fold,
@@ -108,6 +119,7 @@ def train_model(
 
     valid_best_score = 0
     best_score_iter = 0
+    best_outputs = []
 
     model.train()
 
@@ -205,6 +217,7 @@ def train_model(
             if v_score > valid_best_score:
                 valid_best_score = v_score
                 best_score_iter = iter_num
+                best_outputs = outputs
 
                 if save_model:
                     # torch.save(model.state_dict(), f'pth/{model_save_name}_{iter_num}.pth')
@@ -231,7 +244,7 @@ def train_model(
 
         'valid_loss_meter' : v_loss_meter,
         'valid_score_meter' : v_score_meter,
-        'valid_outputs' : outputs,
+        'valid_outputs' : best_outputs,
 
         'train_loss_history' : train_loss_history,
         'train_score_history' : train_score_history,

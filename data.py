@@ -38,8 +38,10 @@ def get_train_metadata(path_to_data):
 
     DATA_PATH = Path(path_to_data)
 
+    train_features = "train_features" # "content/train_features"
+
     train_metadata["feature_path"] = (
-        str(DATA_PATH / "content/train_features")
+        str(DATA_PATH / train_features)
         / train_metadata.image_id.path.with_suffix(".tif").path
     )
 
@@ -78,9 +80,9 @@ def get_train_path_metadata(
     train_x = get_paths_by_chip(train_df)
     train_y = train_df[["chip_id", "label_path"]].drop_duplicates().reset_index(drop=True)
 
-    for feature in features:
-        val_x[f'{feature}_path'] = val_x.apply(lambda row: row_to_path(row, feature), axis=1)
-        train_x[f'{feature}_path'] = train_x.apply(lambda row: row_to_path(row, feature), axis=1)
+    # for feature in features:
+    #     val_x[f'{feature}_path'] = val_x.apply(lambda row: row_to_path(row, feature), axis=1)
+    #     train_x[f'{feature}_path'] = train_x.apply(lambda row: row_to_path(row, feature), axis=1)
 
     valid_ratio = len(val_x) / (len(val_x) + len(train_x)) * 100
     print(f'[data] Dataset size, train: {len(train_x)}, valid: {len(val_x)}, ratio: {valid_ratio}')
@@ -131,14 +133,13 @@ def prepare_data(
 
     # flood_ids = train_metadata.flood_id.unique().tolist()
     # val_flood_ids = random.sample(flood_ids, 3)
-    # val_flood_ids = ['kuo', 'tht', 'qus'] # V1
+    val_flood_ids = ['kuo', 'tht', 'qus'] # V1
     # val_flood_ids = ['qus', 'hxu', 'pxs'] # V2
     # val_flood_ids = ['jja', 'hbe', 'wvy'] # V3
     # val_flood_ids = ['qxb', 'pxs'] # V4
-    val_flood_ids = ['coz', 'hxu', 'pxs'] # V5
+    # val_flood_ids = ['coz', 'hxu', 'pxs'] # V5
     # val_flood_ids = ['coz', 'hxu'] # V6
-
-    # val_flood_ids = ['coz'] # V6
+    # val_flood_ids = ['coz'] # V7
 
 
     print(f'[data] flood_ids: {val_flood_ids}')
@@ -211,7 +212,7 @@ def get_datasets(
     features = [
         'vv',
         'vh',
-        'nasadem',
+        # 'nasadem',
         # 'jrc-gsw-extent',
         # 'jrc-gsw-occurrence',
         # 'jrc-gsw-recurrence',

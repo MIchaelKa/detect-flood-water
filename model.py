@@ -8,7 +8,7 @@ def get_model(encoder_name):
     model = smp.Unet(
         encoder_name=encoder_name,
         encoder_weights=encoder_weights,
-        in_channels=4,
+        in_channels=2,
         classes=2,
     )
 
@@ -59,12 +59,16 @@ class TTAChannelShuffle(tta.base.ImageOnlyTransform):
         return image
 
 def get_model_tta(model):
-    transforms = tta.Compose([
-            # tta.Scale(scales=[1, 2]),
-            # tta.Multiply(factors=[0.9, 1.1]),
-            TTAChannelShuffle()
-        ]
-    )
+    # transforms = tta.Compose([
+    #         # tta.Scale(scales=[1, 2]),
+    #         # tta.Multiply(factors=[0.9, 1.1]),
+    #         # TTAChannelShuffle()
+    #     ]
+    # )
+
+    transforms = tta.aliases.d4_transform()
+    # transforms = tta.aliases.hflip_transform()
+
     tta_model = tta.SegmentationTTAWrapper(model, transforms, merge_mode='mean')
 
     return tta_model

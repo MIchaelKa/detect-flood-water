@@ -32,10 +32,15 @@ class FloodDataset(Dataset):
         x_arr = np.stack(images, axis=-1)
 
         # Min-max normalization
-        x_arr_max = np.max(x_arr, axis=(0,1))
-        x_arr_min = np.min(x_arr, axis=(0,1))
+        min_norm = -77
+        max_norm = 26
+        x_arr = np.clip(x_arr, min_norm, max_norm)
+        x_arr = (x_arr - min_norm) / (max_norm - min_norm)
 
-        x_arr = (x_arr - x_arr_min) / (x_arr_max - x_arr_min)
+        # Min-max normalization
+        # x_arr_max = np.max(x_arr, axis=(0,1))
+        # x_arr_min = np.min(x_arr, axis=(0,1))
+        # x_arr = (x_arr - x_arr_min) / (x_arr_max - x_arr_min)
 
         # Load label if available - training only
         if self.label is not None:
